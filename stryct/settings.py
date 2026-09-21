@@ -1,18 +1,75 @@
-import os
+"""
+Django settings для проекта stryct (biathlon-tools).
+
+Локально:  DEBUG=True, работает по http://127.0.0.1:8000
+На RelaxDev: DEBUG=False, работает за HTTPS-прокси.
+"""
+
 from pathlib import Path
+import os
+
+from dotenv import load_dotenv
 
 
+# ============================================================
+# БАЗОВЫЕ ПУТИ
+# ============================================================
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Загружаем переменные из .env (если файл есть рядом с manage.py)
+load_dotenv(BASE_DIR.parent / '.env')
+load_dotenv(BASE_DIR / '.env')          # на случай, если .env лежит рядом с settings.py
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
-# Сообщаем Django, что он работает за прокси, который использует HTTPS
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+# ============================================================
+# БЕЗОПАСНОСТЬ
+# ============================================================
+SECRET_KEY = os.environ.get(
+    'SECRET_KEY',
+    'django-insecure-dev-only-key-do-not-use-in-production',
+)
 
-# Application definition
+DEBUG = os.environ.get('DEBUG', 'True').lower() in ('1', 'true', 'yes', 'on')
 
+ALLOWED_HOSTS = [
+    h.strip()
+    for h in os.environ.get(
+        'ALLOWED_HOSTS',
+        '127.0.0.1,localhost,biathlon-tools.relaxdev.ru'
+    ).split(',')
+    if h.strip()
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    o.strip()
+    for o in os.environ.get(
+        'CSRF_TRUSTED_ORIGINS',
+        'https://biathlon-tools.relaxdev.ru'
+    ).split(',')
+    if o.strip()
+]
+
+
+# ============================================================
+# AI ПРОВАЙДЕР
+# ============================================================
+AI_PROVIDER = os.environ.get('AI_PROVIDER', 'gigachat')
+
+# GigaChat (Сбер) — основной провайдер
+GIGACHAT_AUTH_KEY = os.environ.get('GIGACHAT_AUTH_KEY', '')
+
+# YandexGPT (альтернатива)
+YANDEX_API_KEY = os.environ.get('YANDEX_API_KEY', '')
+YANDEX_FOLDER_ID = os.environ.get('YANDEX_FOLDER_ID', '')
+
+# Ollama (локально)
+OLLAMA_URL = os.environ.get('OLLAMA_URL', 'http://localhost:11434')
+OLLAMA_MODEL = os.environ.get('OLLAMA_MODEL', 'qwen2.5:7b')
+
+
+# ============================================================
+# ПРИЛОЖЕНИЯ
+# ============================================================
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -20,13 +77,20 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    # Локальные приложения
     'homepage',
     'leader_track',
     'pdf_converter',
 ]
 
+
+# ============================================================
+# MIDDLEWARE
+# ============================================================
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',      # раздача статики
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -35,12 +99,21 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'stryct.urls'
 
+# ============================================================
+# URL / WSGI
+# ============================================================
+ROOT_URLCONF = 'stryct.urls'
+WSGI_APPLICATION = 'stryct.wsgi.application'
+
+
+# ============================================================
+# ШАБЛОНЫ
+# ============================================================
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -52,12 +125,10 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'stryct.wsgi.application'
 
-
-# Database
-# https://docs.djangoproject.com/en/6.1/ref/settings/#databases
-
+# ============================================================
+# БАЗА ДАННЫХ
+# ============================================================
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -66,104 +137,107 @@ DATABASES = {
 }
 
 
-# Password validation
-# https://docs.djangoproject.com/en/6.1/ref/settings/#auth-password-validators
-
+# ============================================================
+# ПАРОЛИ
+# ============================================================
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
 
-# Internationalization
-# https://docs.djangoproject.com/en/6.1/topics/i18n/
-
-LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'UTC'
-
+# ============================================================
+# ЯЗЫК И ВРЕМЯ
+# ============================================================
+LANGUAGE_CODE = 'ru-ru'
+TIME_ZONE = 'Europe/Moscow'
 USE_I18N = True
-
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/6.1/howto/static-files/
+# ============================================================
+# СТАТИКА
+# ============================================================
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
+# Дополнительные папки с исходной статикой (если есть)
+STATICFILES_DIRS = []
+_static_dir = BASE_DIR / 'static'
+if _static_dir.exists():
+    STATICFILES_DIRS.append(_static_dir)
 
-# Email
-# https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
-
-MAILERS = {
+# Whitenoise — сжатие и кэширование
+STORAGES = {
     'default': {
-        'BACKEND': 'django.core.mail.backends.console.EmailBackend',
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
     },
 }
 
 
 # ============================================================
-# AI ПРОВАЙДЕР
+# ЗАГРУЗКА ФАЙЛОВ
 # ============================================================
-# Варианты: 'gigachat', 'yandexgpt', 'ollama'
-AI_PROVIDER = os.environ.get('AI_PROVIDER', 'gigachat')
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
-# --- GigaChat (Сбер) ---
-# 365 млн бесплатных токенов для физлиц. Данные в РФ. Без VPN.
-# В продакшене ключ храните ТОЛЬКО в переменной окружения.
-from dotenv import load_dotenv
-load_dotenv()  # загружает .env в окружение
-
-GIGACHAT_AUTH_KEY = os.environ.get('GIGACHAT_AUTH_KEY', '')
-
-# --- YandexGPT (альтернатива) ---
-YANDEX_API_KEY = os.environ.get('YANDEX_API_KEY', '')
-YANDEX_FOLDER_ID = os.environ.get('YANDEX_FOLDER_ID', '')
-
-# --- Ollama (локально, полностью бесплатно) ---
-OLLAMA_URL = os.environ.get('OLLAMA_URL', 'http://localhost:11434')
-OLLAMA_MODEL = os.environ.get('OLLAMA_MODEL', 'qwen2.5:7b')
+# Ограничения на загрузку (PDF-протоколы)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 25 * 1024 * 1024      # 25 МБ
+FILE_UPLOAD_MAX_MEMORY_SIZE = 25 * 1024 * 1024      # 25 МБ
 
 
-# Секретный ключ — тоже в переменную окружения
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-dev-key-change-me')
+# ============================================================
+# ПРОЧЕЕ
+# ============================================================
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'
-
-ALLOWED_HOSTS = os.environ.get(
-    'ALLOWED_HOSTS',
-    '127.0.0.1,localhost'
-).split(',')
-
-# Статика для продакшена
-STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
-
-# Whitenoise для раздачи статики
-MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
-
-STORAGES = {
-    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
-    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
+# Логирование в stdout (важно для RelaxDev — там ловят stdout)
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
 }
 
 
-# ===== Безопасность для продакшена =====
+# ============================================================
+# ПРОДАКШЕН-НАСТРОЙКИ (применяются только при DEBUG=False)
+# ============================================================
 if not DEBUG:
+    # --- HTTPS за прокси RelaxDev ---
+    # Прокси добавляет заголовок X-Forwarded-Proto: https.
+    # Благодаря этой строке Django понимает, что запрос уже защищён,
+    # и не делает лишний редирект (иначе — бесконечный цикл).
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+    # --- Редирект на HTTPS ---
     SECURE_SSL_REDIRECT = True
+
+    # --- Cookies только по HTTPS ---
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
-    SECURE_HSTS_SECONDS = 31536000        # 1 год
+
+    # --- HSTS ---
+    SECURE_HSTS_SECONDS = 31536000                  # 1 год
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
+
+    # --- Прочие заголовки безопасности ---
     SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_REFERRER_POLICY = 'same-origin'
     X_FRAME_OPTIONS = 'DENY'
+
+    # --- Доверяем прокси при определении схемы (http/https) ---
+    USE_X_FORWARDED_HOST = True
