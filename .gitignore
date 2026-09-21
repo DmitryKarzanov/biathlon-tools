@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.sqlite3
+.venv/
+venv/
+env/
+
+# Django
+*.log
+db.sqlite3
+/media/
+/staticfiles/
+
+# Переменные окружения (ключи!)
+.env
+*.env
+
+# IDE
+.idea/
+.vscode/

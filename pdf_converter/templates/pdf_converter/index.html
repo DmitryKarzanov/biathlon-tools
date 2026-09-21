@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Протокол → CSV/XLSX — tool_for_biathlon</title>
+
+    <style>
+        :root {
+            --blue: #4A8BF0;
+            --blue-solid: #174A99;
+            --blue-hover: #1a5cb5;
+            --red: #E14A2E;
+            --green: #22c55e;
+            --gray: #E3E3E3;
+            --text: #14181F;
+            --muted: #6B7280;
+            --radius: 18px;
+            --shadow: 0 24px 48px rgba(0, 0, 0, .55);
+            --container: 1240px;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { -webkit-text-size-adjust: 100%; }
+
+        body {
+            position: relative; min-height: 100vh;
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-size: 16px; line-height: 1.5; color: #fff;
+            background-color: #000;
+            -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: ""; position: fixed; inset: 0; z-index: -2;
+            background-color: #000;
+            background-image: url('https://i.pinimg.com/1200x/6c/29/98/6c2998bd3d41c11cb3e066937b584c81.jpg');
+            background-size: cover; background-position: center;
+            background-repeat: no-repeat; background-attachment: fixed;
+            filter: grayscale(100%) contrast(1.05) brightness(.75);
+        }
+
+        body::after {
+            content: ""; position: fixed; inset: 0; z-index: -1;
+            background:
+                radial-gradient(ellipse at 20% 30%, rgba(0,0,0,.35), transparent 60%),
+                linear-gradient(180deg, rgba(0,0,0,.55) 0%, rgba(0,0,0,.78) 100%);
+            pointer-events: none;
+        }
+
+        img, svg { display: block; max-width: 100%; }
+        a { color: inherit; }
+
+        .container {
+            width: 100%; max-width: var(--container);
+            margin: 0 auto; padding: 0 24px;
+        }
+
+        /* ============ ШАПКА ============ */
+        .header {
+            position: relative; padding: 20px 0 22px;
+            border-bottom: 1px solid rgba(255, 255, 255, .12);
+            background: rgba(0, 0, 0, .35);
+            backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+        }
+
+        .header__inner {
+            display: flex; align-items: center;
+            justify-content: space-between; gap: 28px; flex-wrap: wrap;
+        }
+
+        .logo {
+            display: inline-flex; align-items: center; gap: 12px;
+            text-decoration: none; flex: 0 0 auto;
+        }
+
+        .logo__mark { flex: 0 0 42px; width: 42px; height: 42px; }
+
+        .logo__text {
+            display: flex; flex-direction: column; line-height: 1.05;
+            font-weight: 800; font-size: 20px; letter-spacing: -0.02em;
+            color: #fff; text-transform: uppercase;
+        }
+
+        .logo__text small {
+            font-size: 10px; font-weight: 600; letter-spacing: .16em;
+            color: rgba(255,255,255,.55); text-transform: uppercase;
+            margin-top: 3px;
+        }
+
+        .top-nav { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+        .top-btn {
+            display: inline-flex; align-items: center; gap: 9px;
+            padding: 12px 22px; border: 2px solid rgba(255,255,255,.7);
+            border-radius: 999px; font-size: 14px; font-weight: 600;
+            line-height: 1; white-space: nowrap; color: #fff;
+            text-decoration: none; background: rgba(255,255,255,.04);
+            transition: background-color .22s ease, color .22s ease,
+                        border-color .22s ease, transform .22s ease,
+                        box-shadow .22s ease;
+        }
+
+        .top-btn:hover, .top-btn:focus-visible {
+            background: var(--blue-solid); border-color: var(--blue-solid);
+            color: #fff; transform: translateY(-2px);
+            box-shadow: 0 12px 26px rgba(23, 74, 153, .45); outline: none;
+        }
+
+        .top-btn:active { transform: translateY(0); }
+
+        .top-btn__dot {
+            flex: 0 0 8px; width: 8px; height: 8px;
+            border-radius: 50%; background: var(--red);
+            box-shadow: 0 0 0 0 rgba(225, 74, 46, .6);
+            animation: pulse 1.9s infinite;
+        }
+
+        @keyframes pulse {
+            0%   { box-shadow: 0 0 0 0 rgba(225, 74, 46, .55); }
+            70%  { box-shadow: 0 0 0 9px rgba(225, 74, 46, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(225, 74, 46, 0); }
+        }
+
+        /* ============ ОСНОВНОЕ ============ */
+        .main { padding: 44px 0 80px; }
+
+        .page-head { margin-bottom: 26px; }
+
+        .page-title {
+            font-size: clamp(26px, 3.2vw, 40px); font-weight: 800;
+            line-height: 1.1; letter-spacing: -0.025em;
+        }
+
+        .page-title span { color: var(--blue); }
+
+        .page-subtitle {
+            margin-top: 10px; font-size: 16px;
+            color: rgba(255,255,255,.65); max-width: 62ch;
+        }
+
+        /* ============ ПАНЕЛЬ ============ */
+        .converter-panel {
+            background: rgba(10, 10, 10, .72);
+            border: 1px solid rgba(255,255,255,.12);
+            border-radius: var(--radius); padding: 30px 32px;
+            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            box-shadow: 0 14px 32px rgba(0, 0, 0, .35);
+            transition: border-color .35s ease, background-color .35s ease,
+                        box-shadow .35s ease;
+        }
+
+        .converter-panel.is-success {
+            background: linear-gradient(135deg,
+                        rgba(34, 197, 94, .18), rgba(34, 197, 94, .08));
+            border-color: rgba(34, 197, 94, .55);
+            box-shadow: 0 0 0 4px rgba(34, 197, 94, .12),
+                        0 14px 32px rgba(0, 0, 0, .35);
+        }
+
+        /* ============ ВКЛАДКИ ============ */
+        .tabs {
+            display: inline-flex; padding: 5px; gap: 4px;
+            background: rgba(0, 0, 0, .4);
+            border: 1px solid rgba(255,255,255,.12);
+            border-radius: 12px; margin-bottom: 22px;
+        }
+
+        .tab {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 10px 20px; border-radius: 9px; border: none;
+            background: transparent; color: rgba(255,255,255,.65);
+            font-family: inherit; font-size: 14px; font-weight: 600;
+            cursor: pointer; transition: background-color .2s ease,
+                                        color .2s ease;
+        }
+
+        .tab:hover { color: #fff; }
+
+        .tab.is-active {
+            background: var(--blue-solid); color: #fff;
+            box-shadow: 0 6px 14px rgba(23, 74, 153, .35);
+        }
+
+        .tab svg { width: 16px; height: 16px; }
+
+        .tab-panel { display: none; }
+        .tab-panel.is-active { display: block; }
+
+        .field {
+            display: flex; flex-direction: column;
+            gap: 8px; margin-bottom: 22px;
+        }
+
+        .field__label {
+            font-size: 12px; font-weight: 700;
+            letter-spacing: .1em; text-transform: uppercase;
+            color: rgba(255,255,255,.6);
+        }
+
+        /* ============ DROPZONE ============ */
+        .dropzone {
+            position: relative;
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; gap: 12px; padding: 38px 24px;
+            border: 2px dashed rgba(255,255,255,.25);
+            border-radius: 14px; background: rgba(0, 0, 0, .35);
+            cursor: pointer; text-align: center;
+            transition: border-color .2s ease, background-color .2s ease;
+        }
+
+        .dropzone:hover, .dropzone.is-dragover {
+            border-color: var(--blue); background: rgba(23, 74, 153, .15);
+        }
+
+        .dropzone.has-file {
+            border-style: solid; border-color: var(--green);
+            background: rgba(34, 197, 94, .08);
+        }
+
+        .dropzone__input {
+            position: absolute; inset: 0; opacity: 0; cursor: pointer;
+        }
+
+        .dropzone__icon {
+            width: 46px; height: 46px; color: var(--blue);
+            transition: color .25s ease, transform .25s ease;
+        }
+
+        .dropzone.has-file .dropzone__icon {
+            color: var(--green); transform: scale(1.08);
+        }
+
+        .dropzone__text {
+            font-size: 15px; font-weight: 600; color: #fff;
+        }
+
+        .dropzone__hint {
+            font-size: 13px; color: rgba(255,255,255,.55);
+        }
+
+        .dropzone__filename {
+            display: none; font-size: 14px; font-weight: 700;
+            color: var(--green); word-break: break-all; max-width: 100%;
+        }
+
+        .dropzone.has-file .dropzone__filename { display: block; }
+        .dropzone.has-file .dropzone__text,
+        .dropzone.has-file .dropzone__hint { display: none; }
+
+        /* ============ TEXTAREA ============ */
+        .protocol-textarea {
+            width: 100%; min-height: 260px; max-height: 520px;
+            padding: 18px 20px; border-radius: 14px;
+            border: 2px solid rgba(255,255,255,.2);
+            background: rgba(0, 0, 0, .45); color: #fff;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 13px; line-height: 1.55; resize: vertical; outline: none;
+            transition: border-color .2s ease, box-shadow .2s ease,
+                        background-color .2s ease;
+        }
+
+        .protocol-textarea::placeholder {
+            color: rgba(255,255,255,.35);
+            font-family: 'Segoe UI', Roboto, sans-serif; font-size: 14px;
+        }
+
+        .protocol-textarea:focus {
+            border-color: var(--blue); background: rgba(0, 0, 0, .55);
+            box-shadow: 0 0 0 4px rgba(74, 139, 240, .18);
+        }
+
+        .converter-panel.is-success .protocol-textarea {
+            border-color: rgba(34, 197, 94, .6);
+            background: rgba(34, 197, 94, .06);
+        }
+
+        .field__footer {
+            display: flex; align-items: center;
+            justify-content: space-between; gap: 12px; flex-wrap: wrap;
+            font-size: 12px; color: rgba(255,255,255,.45); margin-top: 4px;
+        }
+
+        .char-counter { font-variant-numeric: tabular-nums; }
+
+        .clear-btn {
+            background: none; border: none; color: var(--blue);
+            font-size: 12px; font-weight: 600; cursor: pointer;
+            font-family: inherit; padding: 4px 8px; border-radius: 6px;
+            transition: background-color .18s ease;
+        }
+
+        .clear-btn:hover { background: rgba(74, 139, 240, .12); }
+
+        /* ============ ФОРМАТ ============ */
+        .format-switch {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+        }
+
+        .format-option {
+            position: relative;
+            display: flex; flex-direction: column; gap: 4px;
+            padding: 18px 20px; border: 2px solid rgba(255,255,255,.15);
+            border-radius: 14px; background: rgba(0, 0, 0, .3);
+            cursor: pointer;
+            transition: border-color .2s ease, background-color .2s ease;
+        }
+
+        .format-option:hover {
+            border-color: rgba(74, 139, 240, .55);
+            background: rgba(23, 74, 153, .12);
+        }
+
+        .format-option input {
+            position: absolute; opacity: 0; pointer-events: none;
+        }
+
+        .format-option__title {
+            font-size: 16px; font-weight: 700;
+            color: #fff; letter-spacing: -0.01em;
+        }
+
+        .format-option__desc {
+            font-size: 13px; color: rgba(255,255,255,.55);
+        }
+
+        .format-option:has(input:checked) {
+            border-color: var(--blue);
+            background: rgba(74, 139, 240, .15);
+            box-shadow: 0 0 0 4px rgba(74, 139, 240, .12);
+        }
+
+        .format-option:has(input:checked) .format-option__title { color: var(--blue); }
+
+        /* ============ КНОПКА ============ */
+        .actions {
+            display: flex; align-items: center; gap: 16px;
+            flex-wrap: wrap; margin-top: 6px;
+        }
+
+        .btn {
+            display: inline-flex; align-items: center; gap: 10px;
+            padding: 14px 30px; border-radius: 12px; border: none;
+            font-size: 15px; font-weight: 700; line-height: 1;
+            letter-spacing: .02em; cursor: pointer; font-family: inherit;
+            text-decoration: none;
+            transition: background-color .2s ease, transform .15s ease,
+                        box-shadow .2s ease, opacity .2s ease;
+        }
+
+        .btn:active { transform: translateY(1px); }
+
+        .btn--primary {
+            background: var(--blue-solid); color: #fff;
+        }
+
+        .btn--primary:hover:not(:disabled) {
+            background: var(--blue-hover);
+            box-shadow: 0 12px 26px rgba(23, 74, 153, .45);
+        }
+
+        .btn--primary:disabled { opacity: .45; cursor: not-allowed; }
+
+        .btn__spinner { display: none; }
+
+        .btn.is-loading .btn__spinner {
+            display: inline-block; width: 16px; height: 16px;
+            border: 2px solid rgba(255,255,255,.35);
+            border-top-color: #fff; border-radius: 50%;
+            animation: spin .7s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .btn.is-loading .btn__label { opacity: .7; }
+
+        /* ============ СООБЩЕНИЯ ============ */
+        .message {
+            display: none; align-items: center; gap: 12px;
+            margin-top: 20px; padding: 14px 18px; border-radius: 12px;
+            font-size: 14px; font-weight: 600; line-height: 1.4;
+        }
+
+        .message.is-visible { display: flex; }
+
+        .message--success {
+            background: rgba(34, 197, 94, .16);
+            border: 1px solid rgba(34, 197, 94, .5);
+            color: #bbf7d0;
+        }
+
+        .message--error {
+            background: rgba(225, 74, 46, .16);
+            border: 1px solid rgba(225, 74, 46, .5);
+            color: #fecaca;
+        }
+
+        .message__icon { flex: 0 0 22px; width: 22px; height: 22px; }
+
+        .message__badge {
+            margin-left: 6px; padding: 3px 8px;
+            border-radius: 6px; font-size: 11px; font-weight: 700;
+            letter-spacing: .06em; text-transform: uppercase;
+            background: rgba(255,255,255,.12);
+            color: rgba(255,255,255,.8);
+        }
+
+        /* ============ ПОДСКАЗКА ============ */
+        .hint {
+            margin-top: 22px; font-size: 13px; color: rgba(255,255,255,.5);
+        }
+
+        .hint details { cursor: pointer; }
+
+        .hint summary {
+            color: var(--blue); font-weight: 600; padding: 4px 0;
+            list-style: none; display: inline-flex;
+            align-items: center; gap: 6px;
+        }
+
+        .hint summary::-webkit-details-marker { display: none; }
+        .hint summary::after {
+            content: "▾"; font-size: 11px; transition: transform .2s ease;
+        }
+
+        .hint details[open] summary::after { transform: rotate(180deg); }
+
+        .hint__body {
+            padding: 12px 0 4px; color: rgba(255,255,255,.65);
+            max-width: 72ch; line-height: 1.6;
+        }
+
+        .hint__body ol {
+            padding-left: 22px; display: flex;
+            flex-direction: column; gap: 6px;
+        }
+
+        /* ============ АДАПТИВ ============ */
+        @media (max-width: 720px) {
+            .container { padding: 0 16px; }
+            .main { padding: 32px 0 60px; }
+            .header { padding: 14px 0 16px; }
+
+            .header__inner {
+                flex-direction: column; align-items: stretch; gap: 14px;
+            }
+
+            .top-nav {
+                flex-direction: column; align-items: stretch; gap: 10px;
+            }
+
+            .top-btn {
+                justify-content: center; padding: 13px 18px;
+                white-space: normal; text-align: center;
+            }
+
+            .converter-panel { padding: 22px 18px; }
+            .format-switch { grid-template-columns: 1fr; }
+            .btn { width: 100%; justify-content: center; }
+            .protocol-textarea { min-height: 200px; font-size: 12px; }
+            .tabs { width: 100%; }
+            .tab { flex: 1; justify-content: center; padding: 10px 12px; }
+        }
+    </style>
+</head>
+
+<body>
+<div class="main-wrap">
+
+    <header class="header">
+        <div class="container header__inner">
+
+            <a href="/" class="logo">
+                <span class="logo__mark">
+                    <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <circle cx="20" cy="20" r="19" fill="#174A99"/>
+                        <circle cx="20" cy="20" r="11" fill="#ffffff" opacity=".22"/>
+                        <circle cx="20" cy="20" r="4.5" fill="#C2321A"/>
+                    </svg>
+                </span>
+                <span class="logo__text">TOOLS</span>
+            </a>
+
+            <nav class="top-nav" aria-label="Основные сервисы">
+                <a class="top-btn top-btn--live"
+                   href="https://biathlon-results.ru/"
+                   target="_blank" rel="noopener">
+                    <span class="top-btn__dot" aria-hidden="true"></span>
+                    Live-результаты
+                </a>
+
+                <a class="top-btn"
+                   href="https://rusada.ru/substances/check-the-medicine/anti-doping.php"
+                   target="_blank" rel="noopener">
+                    Проверка препаратов
+                </a>
+
+                <a class="top-btn"
+                   href="https://biathlonrus.com/sorevnovaniya/rossiyskie/all/2026-2027/"
+                   target="_blank" rel="noopener">
+                    Список соревнований
+                </a>
+            </nav>
+
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+
+            <div class="page-head">
+                <h1 class="page-title">Протокол <span>→ CSV / XLSX</span></h1>
+                <p class="page-subtitle">
+                    Загрузите PDF или вставьте текст протокола — нейросеть извлечёт
+                    только данные о спортсменах (без судей, реквизитов и погоды)
+                    и подготовит готовую таблицу.
+                </p>
+            </div>
+
+            <form class="converter-panel"
+                  id="converterForm"
+                  method="post"
+                  enctype="multipart/form-data"
+                  action="{% url 'pdf_converter:convert' %}"
+                  novalidate>
+
+                {% csrf_token %}
+
+                <!-- Вкладки -->
+                <div class="tabs" role="tablist">
+                    <button type="button" class="tab is-active"
+                            data-tab="pdf" role="tab">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <path d="M14 2v6h6"/>
+                        </svg>
+                        PDF-файл
+                    </button>
+                    <button type="button" class="tab"
+                            data-tab="text" role="tab">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 7h16M4 12h16M4 17h10"/>
+                        </svg>
+                        Текст протокола
+                    </button>
+                </div>
+
+                <!-- Панель: PDF -->
+                <div class="tab-panel is-active" data-panel="pdf">
+                    <div class="field">
+                        <label class="field__label" for="pdfInput">PDF-файл</label>
+
+                        <label class="dropzone" id="dropzone">
+                            <input class="dropzone__input"
+                                   id="pdfInput"
+                                   name="pdf_file"
+                                   type="file"
+                                   accept="application/pdf,.pdf">
+
+                            <svg class="dropzone__icon" viewBox="0 0 24 24" fill="none"
+                                 stroke="currentColor" stroke-width="1.7"
+                                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <path d="M14 2v6h6"/>
+                                <path d="M12 18v-6"/>
+                                <path d="M9 15l3-3 3 3"/>
+                            </svg>
+
+                            <span class="dropzone__text">Перетащите PDF сюда или нажмите, чтобы выбрать</span>
+                            <span class="dropzone__hint">Только .pdf, до 20 МБ</span>
+
+                            <span class="dropzone__filename" id="fileName"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Панель: Текст -->
+                <div class="tab-panel" data-panel="text">
+                    <div class="field">
+                        <label class="field__label" for="protocolInput">Текст протокола</label>
+
+                        <textarea class="protocol-textarea"
+                                  id="protocolInput"
+                                  name="protocol_text"
+                                  placeholder="Вставьте сюда скопированный текст протокола…"
+                                  spellcheck="false"></textarea>
+
+                        <div class="field__footer">
+                            <span class="char-counter" id="charCounter">0 символов</span>
+                            <button type="button" class="clear-btn" id="clearBtn">Очистить поле</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Формат -->
+                <div class="field">
+                    <span class="field__label">Формат результата</span>
+
+                    <div class="format-switch">
+                        <label class="format-option">
+                            <input type="radio" name="format" value="csv" checked>
+                            <span class="format-option__title">CSV</span>
+                            <span class="format-option__desc">Универсальный, откроется в Excel и Google Sheets</span>
+                        </label>
+
+                        <label class="format-option">
+                            <input type="radio" name="format" value="xlsx">
+                            <span class="format-option__title">XLSX</span>
+                            <span class="format-option__desc">Готовый файл Excel с сохранением таблиц</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Кнопка -->
+                <div class="actions">
+                    <button class="btn btn--primary" id="convertBtn" type="submit">
+                        <span class="btn__spinner" aria-hidden="true"></span>
+                        <span class="btn__label">Обработать и скачать</span>
+                    </button>
+                </div>
+
+                <!-- Сообщение -->
+                <div class="message" id="message" role="status" aria-live="polite">
+                    <svg class="message__icon" id="messageIcon" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2.2"
+                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"></svg>
+                    <span id="messageText"></span>
+                    <span class="message__badge" id="messageBadge" hidden></span>
+                </div>
+
+                <!-- Подсказка -->
+                <div class="hint">
+                    <details>
+                        <summary>Как это работает</summary>
+                        <div class="hint__body">
+                            <ol>
+                                <li><b>PDF:</b> перетащите файл или выберите через проводник.</li>
+                                <li><b>Текст:</b> скопируйте содержимое страницы с протоколом (Ctrl+A → Ctrl+C) и вставьте в поле.</li>
+                                <li>Выберите формат: CSV или XLSX.</li>
+                                <li>Нажмите «Обработать и скачать» — файл скачается автоматически.</li>
+                                <li>В уведомлении появится пометка, кто обработал запрос: <b>AI</b> или <b>regex</b> (резервный алгоритм).</li>
+                            </ol>
+                        </div>
+                    </details>
+                </div>
+
+            </form>
+        </div>
+    </main>
+</div>
+
+<script>
+(function () {
+    'use strict';
+
+    const form       = document.getElementById('converterForm');
+    const pdfInput   = document.getElementById('pdfInput');
+    const textInput  = document.getElementById('protocolInput');
+    const dropzone   = document.getElementById('dropzone');
+    const fileNameEl = document.getElementById('fileName');
+    const counter    = document.getElementById('charCounter');
+    const clearBtn   = document.getElementById('clearBtn');
+    const convertBtn = document.getElementById('convertBtn');
+    const messageBox = document.getElementById('message');
+    const messageIco = document.getElementById('messageIcon');
+    const messageTxt = document.getElementById('messageText');
+    const messageBdg = document.getElementById('messageBadge');
+    const panel      = document.querySelector('.converter-panel');
+
+    const ICONS = {
+        success: '<path d="M20 6L9 17l-5-5"/>',
+        error:   '<circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>'
+    };
+
+    /* ------- Вкладки ------- */
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('is-active'));
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('is-active'));
+            tab.classList.add('is-active');
+            document.querySelector('.tab-panel[data-panel="' + tab.dataset.tab + '"]')
+                    .classList.add('is-active');
+            hideMessage();
+        });
+    });
+
+    /* ------- Счётчик ------- */
+    function plural(n, one, few, many) {
+        const m10 = n % 10, m100 = n % 100;
+        if (m10 === 1 && m100 !== 11) return one;
+        if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return few;
+        return many;
+    }
+
+    function updateCounter() {
+        const n = textInput.value.length;
+        counter.textContent = n + ' ' + plural(n, 'символ', 'символа', 'символов');
+    }
+
+    textInput.addEventListener('input', updateCounter);
+    updateCounter();
+
+    /* ------- Очистка ------- */
+    clearBtn.addEventListener('click', () => {
+        if (!textInput.value) return;
+        textInput.value = '';
+        updateCounter();
+        panel.classList.remove('is-success');
+        hideMessage();
+        textInput.focus();
+    });
+
+    /* ------- PDF-дропзона ------- */
+    pdfInput.addEventListener('change', () => {
+        const f = pdfInput.files && pdfInput.files[0];
+        if (f) {
+            fileNameEl.textContent = f.name;
+            dropzone.classList.add('has-file');
+        } else {
+            fileNameEl.textContent = '';
+            dropzone.classList.remove('has-file');
+        }
+    });
+
+    ['dragenter', 'dragover'].forEach(ev => {
+        dropzone.addEventListener(ev, e => {
+            e.preventDefault();
+            dropzone.classList.add('is-dragover');
+        });
+    });
+
+    ['dragleave', 'drop'].forEach(ev => {
+        dropzone.addEventListener(ev, e => {
+            e.preventDefault();
+            dropzone.classList.remove('is-dragover');
+        });
+    });
+
+    dropzone.addEventListener('drop', e => {
+        const file = e.dataTransfer.files && e.dataTransfer.files[0];
+        if (!file) return;
+        if (!file.name.toLowerCase().endsWith('.pdf')) {
+            showMessage('error', 'Можно загружать только PDF-файлы');
+            return;
+        }
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        pdfInput.files = dt.files;
+        pdfInput.dispatchEvent(new Event('change'));
+    });
+
+    /* ------- Сообщения ------- */
+    function showMessage(type, text, badge) {
+        messageBox.classList.remove('is-visible', 'message--success', 'message--error');
+        void messageBox.offsetWidth;
+        messageIco.innerHTML = ICONS[type] || '';
+        messageTxt.textContent = text;
+        if (badge) {
+            messageBdg.textContent = badge;
+            messageBdg.hidden = false;
+        } else {
+            messageBdg.hidden = true;
+        }
+        messageBox.classList.add('is-visible', 'message--' + type);
+    }
+
+    function hideMessage() {
+        messageBox.classList.remove('is-visible', 'message--success', 'message--error');
+        messageBdg.hidden = true;
+    }
+
+    /* ------- Имя файла ------- */
+    function filenameFromResponse(resp, fallback) {
+        const cd = resp.headers.get('Content-Disposition') || '';
+        const utf8 = /filename\*=UTF-8''([^;]+)/i.exec(cd);
+        if (utf8) return decodeURIComponent(utf8[1]);
+        const simple = /filename="?([^";]+)"?/i.exec(cd);
+        if (simple) return simple[1];
+        return fallback;
+    }
+
+    /* ------- Отправка ------- */
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        panel.classList.remove('is-success');
+        hideMessage();
+
+        const activeTab = document.querySelector('.tab.is-active').dataset.tab;
+        const hasPdf = pdfInput.files && pdfInput.files[0];
+        const hasText = textInput.value.trim().length > 0;
+
+        if (activeTab === 'pdf' && !hasPdf) {
+            showMessage('error', 'Выберите PDF-файл');
+            return;
+        }
+        if (activeTab === 'text' && !hasText) {
+            showMessage('error', 'Вставьте текст протокола');
+            textInput.focus();
+            return;
+        }
+        if (activeTab === 'text' && hasText && hasText.length < 30) {
+            showMessage('error', 'Текст слишком короткий — кажется, скопировано не всё');
+            return;
+        }
+
+        const format = form.querySelector('input[name="format"]:checked').value;
+
+        convertBtn.disabled = true;
+        convertBtn.classList.add('is-loading');
+
+        try {
+            const fd = new FormData(form);
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: fd,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+
+            if (!response.ok) {
+                let msg = 'Не удалось обработать протокол';
+                try {
+                    const data = await response.json();
+                    if (data && data.error) msg = data.error;
+                } catch (_) {}
+                throw new Error(msg);
+            }
+
+            const source = (response.headers.get('X-Parser-Source') || '').toUpperCase();
+            const blob = await response.blob();
+            const fallback = 'protocol.' + (format === 'xlsx' ? 'xlsx' : 'csv');
+            const filename = filenameFromResponse(response, fallback);
+
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = filename;
+            document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 4000);
+
+            panel.classList.add('is-success');
+            showMessage('success',
+                `Файл «${filename}» сохранён. Проверьте папку «Загрузки».`,
+                source ? 'источник: ' + source : null);
+
+            panel.animate(
+                [
+                    { boxShadow: '0 0 0 0 rgba(34,197,94,.55)' },
+                    { boxShadow: '0 0 0 22px rgba(34,197,94,0)' }
+                ],
+                { duration: 900, easing: 'ease-out' }
+            );
+
+        } catch (err) {
+            panel.classList.remove('is-success');
+            showMessage('error', err.message || 'Ошибка при обработке');
+        } finally {
+            convertBtn.disabled = false;
+            convertBtn.classList.remove('is-loading');
+        }
+    });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>tool_for_biathlon</title>
+
+    <style>
+        /* ============================================================
+           ПЕРЕМЕННЫЕ
+           ============================================================ */
+        :root {
+            --blue: #4A8BF0;
+            --blue-solid: #174A99;
+            --red: #E14A2E;
+            --gray: #E3E3E3;
+            --text: #14181F;
+            --muted: #6B7280;
+            --radius: 18px;
+            --shadow: 0 24px 48px rgba(0, 0, 0, .55);
+            --container: 1240px;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html { -webkit-text-size-adjust: 100%; }
+
+        /* ============================================================
+           ФОН: чёрный + изображение в ч/б
+           Если изображение не загрузится — останется чёрный
+           ============================================================ */
+        body {
+            position: relative;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-size: 16px;
+            line-height: 1.5;
+            color: #fff;
+            background-color: #000; /* fallback */
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow-x: hidden;
+        }
+
+        /* Слой с фоновым изображением */
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: -2;
+            background-color: #000; /* fallback-цвет */
+            background-image: url('https://i.pinimg.com/1200x/6c/29/98/6c2998bd3d41c11cb3e066937b584c81.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            filter: grayscale(100%) contrast(1.05) brightness(.75);
+        }
+
+        /* Затемняющий слой для читаемости */
+        body::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background:
+                radial-gradient(ellipse at 20% 30%, rgba(0,0,0,.35), transparent 60%),
+                linear-gradient(180deg, rgba(0,0,0,.55) 0%, rgba(0,0,0,.75) 100%);
+            pointer-events: none;
+        }
+
+        img, svg { display: block; max-width: 100%; }
+        a { color: inherit; }
+
+        .container {
+            width: 100%;
+            max-width: var(--container);
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* ============================================================
+           ШАПКА
+           ============================================================ */
+        .header {
+            position: relative;
+            padding: 20px 0 22px;
+            border-bottom: 1px solid rgba(255, 255, 255, .12);
+            background: rgba(0, 0, 0, .35);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+        }
+
+        .header__inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 28px;
+            flex-wrap: wrap;
+        }
+
+        /* Логотип */
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            flex: 0 0 auto;
+        }
+
+        .logo__mark {
+            flex: 0 0 42px;
+            width: 42px;
+            height: 42px;
+        }
+
+        .logo__text {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.05;
+            font-weight: 800;
+            font-size: 20px;
+            letter-spacing: -0.02em;
+            color: #fff;
+            text-transform: uppercase;
+        }
+
+        .logo__text small {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: .16em;
+            color: rgba(255,255,255,.55);
+            text-transform: uppercase;
+            margin-top: 3px;
+        }
+
+        /* Верхнее меню (3 кнопки) */
+        .top-nav {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .top-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            padding: 12px 22px;
+            border: 2px solid rgba(255,255,255,.7);
+            border-radius: 999px;
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 1;
+            white-space: nowrap;
+            color: #fff;
+            text-decoration: none;
+            background: rgba(255,255,255,.04);
+            transition: background-color .22s ease, color .22s ease,
+                        border-color .22s ease, transform .22s ease,
+                        box-shadow .22s ease;
+        }
+
+        .top-btn:hover,
+        .top-btn:focus-visible {
+            background: var(--blue-solid);
+            border-color: var(--blue-solid);
+            color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 12px 26px rgba(23, 74, 153, .45);
+            outline: none;
+        }
+
+        .top-btn:active { transform: translateY(0); }
+
+        /* Пульсирующая точка у Live-кнопки */
+        .top-btn__dot {
+            flex: 0 0 8px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--red);
+            box-shadow: 0 0 0 0 rgba(225, 74, 46, .6);
+            animation: pulse 1.9s infinite;
+        }
+
+        @keyframes pulse {
+            0%   { box-shadow: 0 0 0 0 rgba(225, 74, 46, .55); }
+            70%  { box-shadow: 0 0 0 9px rgba(225, 74, 46, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(225, 74, 46, 0); }
+        }
+
+        /* Декор из трёх кружков */
+        .header__decor {
+            position: absolute;
+            left: 24px;
+            bottom: -5px;
+            pointer-events: none;
+        }
+
+        /* ============================================================
+           ОСНОВНОЙ БЛОК
+           ============================================================ */
+        .main {
+            padding: 56px 0 80px;
+        }
+
+        .hero {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            align-items: center;
+            gap: 56px;
+        }
+
+        /* ---------- МАСКОТ ---------- */
+        .hero__mascot {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 480px;
+        }
+
+        .mascot {
+            width: 100%;
+            max-width: 460px;
+            height: auto;
+            filter: grayscale(100%) contrast(1.05);
+            /* Плавное «вливание» в фон по краям */
+            -webkit-mask-image:
+                radial-gradient(ellipse 78% 78% at 50% 50%,
+                                #000 45%, rgba(0,0,0,.65) 65%, transparent 95%);
+            mask-image:
+                radial-gradient(ellipse 78% 78% at 50% 50%,
+                                #000 45%, rgba(0,0,0,.65) 65%, transparent 95%);
+            animation: float 6s ease-in-out infinite;
+            transition: opacity .4s ease;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50%      { transform: translateY(-14px); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .mascot { animation: none; }
+            .top-btn__dot { animation: none; }
+        }
+
+        /* ============================================================
+           КАПЧА-ПИНГВИН (fallback, если картинка не загрузилась)
+           ============================================================ */
+        .captcha {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 18px;
+            padding: 30px 34px 34px;
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 22px 50px rgba(0, 0, 0, .6);
+            color: var(--text);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .captcha.is-visible { display: flex; }
+
+        .captcha__penguin {
+            width: 150px;
+            height: auto;
+        }
+
+        .captcha__text {
+            font-size: 15px;
+            font-weight: 600;
+            text-align: center;
+            color: #333;
+        }
+
+        .captcha__sub {
+            font-size: 13px;
+            color: var(--muted);
+            text-align: center;
+            margin-top: -8px;
+        }
+
+        .captcha__btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 22px;
+            border: 2px solid #d0d4db;
+            border-radius: 999px;
+            background: #fff;
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            cursor: pointer;
+            transition: border-color .2s ease, background-color .2s ease,
+                        transform .2s ease;
+        }
+
+        .captcha__btn:hover {
+            border-color: var(--blue-solid);
+            background: #f0f4fb;
+            transform: translateY(-1px);
+        }
+
+        .captcha__check {
+            width: 18px;
+            height: 18px;
+            border: 2px solid #b6bcc6;
+            border-radius: 4px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color .2s ease, border-color .2s ease;
+        }
+
+        .captcha__btn:hover .captcha__check {
+            border-color: var(--blue-solid);
+            background: var(--blue-solid);
+        }
+
+        .captcha__btn:hover .captcha__check::after {
+            content: "";
+            width: 5px;
+            height: 9px;
+            border-right: 2px solid #fff;
+            border-bottom: 2px solid #fff;
+            transform: rotate(45deg) translate(-1px, -1px);
+        }
+
+        .captcha__btn.is-done {
+            border-color: #2ea44f;
+            background: #e8f7ec;
+            color: #1a7a35;
+            pointer-events: none;
+        }
+
+        .captcha__btn.is-done .captcha__check {
+            border-color: #2ea44f;
+            background: #2ea44f;
+        }
+
+        .captcha__btn.is-done .captcha__check::after {
+            content: "";
+            width: 5px;
+            height: 9px;
+            border-right: 2px solid #fff;
+            border-bottom: 2px solid #fff;
+            transform: rotate(45deg) translate(-1px, -1px);
+        }
+
+        /* ============================================================
+           КАРТОЧКИ-ИНСТРУМЕНТЫ
+           ============================================================ */
+        .hero__tools {
+            display: flex;
+            flex-direction: column;
+        }
+
+
+        .hero__subtitle {
+            margin-top: 14px;
+            font-size: 16px;
+            color: rgba(255,255,255,.65);
+            max-width: 46ch;
+        }
+
+        .tool-list {
+            margin-top: 34px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .tool-card {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 22px;
+            padding: 26px 30px 26px 32px;
+            background: #fff;
+            border: 1px solid transparent;
+            border-radius: var(--radius);
+            text-decoration: none;
+            color: var(--text);
+            overflow: hidden;
+            box-shadow: 0 10px 26px rgba(0, 0, 0, .35);
+            transition: transform .25s ease, box-shadow .25s ease,
+                        border-color .25s ease, background-color .25s ease;
+        }
+
+        .tool-card::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 20px;
+            bottom: 20px;
+            width: 5px;
+            border-radius: 0 4px 4px 0;
+            background: var(--blue-solid);
+            transition: top .25s ease, bottom .25s ease;
+        }
+
+        .tool-card--accent::before { background: var(--red); }
+
+        .tool-card:hover,
+        .tool-card:focus-visible {
+            outline: none;
+            transform: translateY(-3px);
+            box-shadow: var(--shadow);
+        }
+
+        .tool-card:hover::before,
+        .tool-card:focus-visible::before {
+            top: 0;
+            bottom: 0;
+        }
+
+        .tool-card__icon {
+            flex: 0 0 62px;
+            width: 62px;
+            height: 62px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(23, 74, 153, .09);
+            color: var(--blue-solid);
+            transition: background-color .25s ease, color .25s ease,
+                        transform .25s ease;
+        }
+
+        .tool-card--accent .tool-card__icon {
+            background: rgba(194, 50, 26, .09);
+            color: var(--red);
+        }
+
+        .tool-card:hover .tool-card__icon { transform: scale(1.06); }
+
+        .tool-card__body { min-width: 0; }
+
+        .tool-card__title {
+            font-size: 18px;
+            font-weight: 700;
+            line-height: 1.25;
+            letter-spacing: -0.01em;
+        }
+
+        .tool-card__desc {
+            margin-top: 5px;
+            font-size: 14px;
+            line-height: 1.45;
+            color: var(--muted);
+        }
+
+        .tool-card__arrow {
+            margin-left: auto;
+            flex: 0 0 auto;
+            color: #c9ccd3;
+            transition: color .25s ease, transform .25s ease;
+        }
+
+        .tool-card:hover .tool-card__arrow,
+        .tool-card:focus-visible .tool-card__arrow {
+            color: var(--blue-solid);
+            transform: translateX(5px);
+        }
+
+        .tool-card--accent:hover .tool-card__arrow,
+        .tool-card--accent:focus-visible .tool-card__arrow {
+            color: var(--red);
+        }
+
+        /* ============================================================
+           АДАПТИВ
+           ============================================================ */
+        @media (max-width: 1080px) {
+            .hero { gap: 40px; }
+            .mascot { max-width: 380px; }
+            .hero__mascot { min-height: 420px; }
+        }
+
+        @media (max-width: 900px) {
+            .main { padding: 40px 0 60px; }
+
+            .hero {
+                grid-template-columns: 1fr;
+                gap: 34px;
+            }
+
+            .hero__tools { order: 1; }
+            .hero__mascot { order: 2; min-height: 340px; }
+
+            .mascot { max-width: 320px; }
+
+            .header__decor { display: none; }
+        }
+
+        @media (max-width: 720px) {
+            .container { padding: 0 16px; }
+
+            .header { padding: 16px 0 18px; }
+
+            .header__inner {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 16px;
+            }
+
+            .top-nav {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+
+            .top-btn {
+                justify-content: center;
+                padding: 14px 18px;
+                white-space: normal;
+                text-align: center;
+            }
+
+            .tool-card {
+                flex-wrap: wrap;
+                padding: 22px 22px 22px 26px;
+                gap: 16px;
+            }
+
+            .tool-card__icon {
+                flex: 0 0 52px;
+                width: 52px;
+                height: 52px;
+                border-radius: 13px;
+            }
+
+            .tool-card__title { font-size: 16px; }
+
+            .tool-card__arrow { display: none; }
+        }
+    </style>
+</head>
+
+<body>
+<div class="main-wrap">
+
+    <!-- ======================= ШАПКА ======================= -->
+    <header class="header">
+        <div class="container header__inner">
+
+            <a href="/" class="logo">
+                <span class="logo__mark">
+                    <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <circle cx="20" cy="20" r="19" fill="#174A99"/>
+                        <circle cx="20" cy="20" r="11" fill="#ffffff" opacity=".22"/>
+                        <circle cx="20" cy="20" r="4.5" fill="#C2321A"/>
+                    </svg>
+                </span>
+                <span class="logo__text">
+                    TOOLS
+                </span>
+            </a>
+
+            <nav class="top-nav" aria-label="Основные сервисы">
+                <a class="top-btn top-btn--live"
+                   href="https://biathlon-results.ru/"
+                   target="_blank" rel="noopener">
+                    <span class="top-btn__dot" aria-hidden="true"></span>
+                    Live-результаты
+                </a>
+
+                <a class="top-btn"
+                   href="https://rusada.ru/substances/check-the-medicine/anti-doping.php"
+                   target="_blank" rel="noopener">
+                    Проверка препаратов
+                </a>
+
+                <a class="top-btn"
+                   href="https://biathlonrus.com/sorevnovaniya/rossiyskie/all/2026-2027/"
+                   target="_blank" rel="noopener">
+                    Список соревнований
+                </a>
+            </nav>
+
+        </div>
+
+        <div class="header__decor" aria-hidden="true">
+            <svg width="43" height="9" viewBox="0 0 43 9" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="4.5" cy="4.5" r="4.5" fill="rgba(255,255,255,.35)"/>
+                <circle cx="21.5" cy="4.5" r="4.5" fill="#4A8BF0"/>
+                <circle cx="38.5" cy="4.5" r="4.5" fill="#E14A2E"/>
+            </svg>
+        </div>
+    </header>
+
+    <!-- ======================= ОСНОВНОЕ ======================= -->
+    <main class="main">
+        <div class="container">
+            <section class="hero">
+
+                <!-- ---------- СЛЕВА: маскот ---------- -->
+                <div class="hero__mascot">
+
+                    <img class="mascot"
+                         id="mascot-img"
+                         src="https://i.pinimg.com/736x/d8/0a/0e/d80a0e1bd64e29fd72f037f9e5a56aef.jpg"
+                         alt="Биатлонист"
+                         onerror="
+                             this.style.display='none';
+                             document.getElementById('penguin-captcha').classList.add('is-visible');
+                         ">
+
+                    <!-- Капча-пингвин (показывается, если картинка не загрузилась) -->
+                    <div class="captcha" id="penguin-captcha" role="dialog" aria-label="Капча">
+                        <svg class="captcha__penguin" viewBox="0 0 120 150" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                            <!-- тело -->
+                            <ellipse cx="60" cy="95" rx="38" ry="50" fill="#1a1a1a"/>
+                            <!-- живот -->
+                            <ellipse cx="60" cy="100" rx="26" ry="38" fill="#f8f8f8"/>
+                            <!-- голова -->
+                            <circle cx="60" cy="42" r="30" fill="#1a1a1a"/>
+                            <!-- «маска» на лице -->
+                            <ellipse cx="60" cy="48" rx="22" ry="20" fill="#f8f8f8"/>
+                            <!-- глаза -->
+                            <circle cx="52" cy="42" r="3.5" fill="#1a1a1a"/>
+                            <circle cx="68" cy="42" r="3.5" fill="#1a1a1a"/>
+                            <circle cx="53" cy="41" r="1.2" fill="#fff"/>
+                            <circle cx="69" cy="41" r="1.2" fill="#fff"/>
+                            <!-- клюв -->
+                            <path d="M55 50 L 60 57 L 65 50 Z" fill="#FF9800"/>
+                            <!-- крылья -->
+                            <path d="M25 72 Q 15 100 28 128" stroke="#1a1a1a" stroke-width="12"
+                                  stroke-linecap="round" fill="none"/>
+                            <path d="M95 72 Q 105 100 92 128" stroke="#1a1a1a" stroke-width="12"
+                                  stroke-linecap="round" fill="none"/>
+                            <!-- лапки -->
+                            <ellipse cx="45" cy="143" rx="10" ry="4" fill="#FF9800"/>
+                            <ellipse cx="75" cy="143" rx="10" ry="4" fill="#FF9800"/>
+                        </svg>
+
+                        <p class="captcha__text">Подтвердите, что вы не робот</p>
+                        <p class="captcha__sub">Нажмите на кнопку ниже, чтобы продолжить</p>
+
+                        <button type="button" class="captcha__btn"
+                                onclick="this.classList.add('is-done'); this.lastElementChild.textContent='Проверено';">
+                            <span class="captcha__check" aria-hidden="true"></span>
+                            <span>Я не робот</span>
+                        </button>
+                    </div>
+
+                </div>
+
+                <!-- ---------- СПРАВА: инструменты ---------- -->
+                <div class="hero__tools">
+
+                    <p class="hero__subtitle">
+                        Всё необходимое в одном месте: работа с протоколами
+                        и отслеживание динамики спортсменов.
+                    </p>
+
+                    <div class="tool-list">
+
+                        <!-- ИНСТРУМЕНТ 1: PDF → CSV -->
+                        <a class="tool-card" href="{% url 'pdf_converter:index' %}" data-tool="pdf-to-csv">
+                            <span class="tool-card__icon">
+                                <svg width="30" height="30" viewBox="0 0 24 24" fill="none"
+                                     stroke="currentColor" stroke-width="1.8"
+                                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                    <path d="M14 2v6h6"/>
+                                    <path d="M8 13h3M8 17h3"/>
+                                    <path d="M15 13l2 2-2 2"/>
+                                    <path d="M17 15h-4"/>
+                                </svg>
+                            </span>
+                            <span class="tool-card__body">
+                                <span class="tool-card__title">Конвертер PDF → CSV</span>
+                            </span>
+                            <span class="tool-card__arrow">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                     stroke="currentColor" stroke-width="2.2"
+                                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M5 12h13"/>
+                                    <path d="M13 6l6 6-6 6"/>
+                                </svg>
+                            </span>
+                        </a>
+
+                        <!-- ИНСТРУМЕНТ 2: Отслеживание лидеров -->
+                        <a class="tool-card tool-card--accent" href="{% url 'leader_track:leaders' %}" data-tool="leaders">
+                            <span class="tool-card__icon">
+                                <svg width="30" height="30" viewBox="0 0 24 24" fill="none"
+                                     stroke="currentColor" stroke-width="1.8"
+                                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M3 21h18"/>
+                                    <rect x="4" y="12" width="4" height="6" rx="1"/>
+                                    <rect x="10" y="7" width="4" height="11" rx="1"/>
+                                    <rect x="16" y="3" width="4" height="15" rx="1"/>
+                                </svg>
+                            </span>
+                            <span class="tool-card__body">
+                                <span class="tool-card__title">Отслеживание лидеров</span>
+                            </span>
+                            <span class="tool-card__arrow">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                     stroke="currentColor" stroke-width="2.2"
+                                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M5 12h13"/>
+                                    <path d="M13 6l6 6-6 6"/>
+                                </svg>
+                            </span>
+                        </a>
+
+                    </div>
+                </div>
+
+            </section>
+        </div>
+    </main>
+
+</div>
+</body>
+</html>

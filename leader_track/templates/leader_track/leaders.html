@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Отслеживание лидеров — tool_for_biathlon</title>
+
+    <style>
+        /* ============================================================
+           ПЕРЕМЕННЫЕ
+           ============================================================ */
+        :root {
+            --blue: #4A8BF0;
+            --blue-solid: #174A99;
+            --blue-hover: #1a5cb5;
+            --red: #E14A2E;
+            --gray: #E3E3E3;
+            --text: #14181F;
+            --muted: #6B7280;
+            --radius: 18px;
+            --shadow: 0 24px 48px rgba(0, 0, 0, .55);
+            --container: 1320px;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html { -webkit-text-size-adjust: 100%; }
+
+        body {
+            position: relative;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-size: 16px;
+            line-height: 1.5;
+            color: #fff;
+            background-color: #000;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: -2;
+            background-color: #000;
+            background-image: url('https://i.pinimg.com/1200x/6c/29/98/6c2998bd3d41c11cb3e066937b584c81.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            filter: grayscale(100%) contrast(1.05) brightness(.75);
+        }
+
+        body::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background:
+                radial-gradient(ellipse at 20% 30%, rgba(0,0,0,.35), transparent 60%),
+                linear-gradient(180deg, rgba(0,0,0,.55) 0%, rgba(0,0,0,.78) 100%);
+            pointer-events: none;
+        }
+
+        img, svg { display: block; max-width: 100%; }
+        a { color: inherit; }
+
+        .container {
+            width: 100%;
+            max-width: var(--container);
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* ============================================================
+           ШАПКА
+           ============================================================ */
+        .header {
+            position: relative;
+            padding: 20px 0 22px;
+            border-bottom: 1px solid rgba(255, 255, 255, .12);
+            background: rgba(0, 0, 0, .35);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+        }
+
+        .header__inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 28px;
+            flex-wrap: wrap;
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            flex: 0 0 auto;
+        }
+
+        .logo__mark { flex: 0 0 42px; width: 42px; height: 42px; }
+
+        .logo__text {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.05;
+            font-weight: 800;
+            font-size: 20px;
+            letter-spacing: -0.02em;
+            color: #fff;
+            text-transform: uppercase;
+        }
+
+        .logo__text small {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: .16em;
+            color: rgba(255,255,255,.55);
+            text-transform: uppercase;
+            margin-top: 3px;
+        }
+
+        .top-nav {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .top-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            padding: 12px 22px;
+            border: 2px solid rgba(255,255,255,.7);
+            border-radius: 999px;
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 1;
+            white-space: nowrap;
+            color: #fff;
+            text-decoration: none;
+            background: rgba(255,255,255,.04);
+            transition: background-color .22s ease, color .22s ease,
+                        border-color .22s ease, transform .22s ease,
+                        box-shadow .22s ease;
+        }
+
+        .top-btn:hover, .top-btn:focus-visible {
+            background: var(--blue-solid);
+            border-color: var(--blue-solid);
+            color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 12px 26px rgba(23, 74, 153, .45);
+            outline: none;
+        }
+
+        .top-btn:active { transform: translateY(0); }
+
+        .top-btn__dot {
+            flex: 0 0 8px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--red);
+            box-shadow: 0 0 0 0 rgba(225, 74, 46, .6);
+            animation: pulse 1.9s infinite;
+        }
+
+        @keyframes pulse {
+            0%   { box-shadow: 0 0 0 0 rgba(225, 74, 46, .55); }
+            70%  { box-shadow: 0 0 0 9px rgba(225, 74, 46, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(225, 74, 46, 0); }
+        }
+
+        /* ============================================================
+           ОСНОВНОЙ БЛОК
+           ============================================================ */
+        .main { padding: 44px 0 80px; }
+
+        .page-head {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 24px;
+            flex-wrap: wrap;
+            margin-bottom: 26px;
+        }
+
+        .page-title {
+            font-size: clamp(26px, 3.2vw, 40px);
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -0.025em;
+        }
+
+        .page-title span { color: var(--blue); }
+
+        .clock {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 18px;
+            border-radius: 999px;
+            background: rgba(0, 0, 0, .55);
+            border: 1px solid rgba(255,255,255,.12);
+            backdrop-filter: blur(10px);
+        }
+
+        .clock__label {
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,.55);
+        }
+
+        .clock__value {
+            font-size: 18px;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            color: #fff;
+        }
+
+        /* ============================================================
+           ПАНЕЛИ
+           ============================================================ */
+        .panel {
+            background: rgba(10, 10, 10, .72);
+            border: 1px solid rgba(255,255,255,.12);
+            border-radius: var(--radius);
+            padding: 26px 30px;
+            margin-bottom: 22px;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: 0 14px 32px rgba(0, 0, 0, .35);
+        }
+
+        .panel__title {
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,.65);
+            margin-bottom: 18px;
+        }
+
+        .setup-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px 24px;
+            align-items: flex-end;
+        }
+
+        .setup-form label {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            font-size: 13px;
+            font-weight: 600;
+            color: rgba(255,255,255,.65);
+            min-width: 180px;
+        }
+
+        .setup-form label > span { letter-spacing: .04em; }
+
+        .setup-form input,
+        .setup-form select,
+        .add-leader input {
+            padding: 11px 14px;
+            border-radius: 11px;
+            border: 1px solid rgba(255,255,255,.2);
+            background: rgba(0, 0, 0, .4);
+            color: #fff;
+            font-size: 15px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color .2s ease, box-shadow .2s ease;
+        }
+
+        .setup-form input:focus,
+        .setup-form select:focus,
+        .add-leader input:focus {
+            border-color: var(--blue);
+            box-shadow: 0 0 0 3px rgba(74, 139, 240, .25);
+        }
+
+        .setup-form select {
+            appearance: none;
+            -webkit-appearance: none;
+            background-image:
+                linear-gradient(45deg, transparent 50%, #fff 50%),
+                linear-gradient(135deg, #fff 50%, transparent 50%);
+            background-position:
+                calc(100% - 18px) calc(50% - 2px),
+                calc(100% - 13px) calc(50% - 2px);
+            background-size: 5px 5px, 5px 5px;
+            background-repeat: no-repeat;
+            padding-right: 34px;
+            cursor: pointer;
+        }
+
+        .setup-form select option {
+            background: #1a1a1a;
+            color: #fff;
+        }
+
+        .setup-form__actions {
+            display: flex;
+            gap: 10px;
+            margin-left: auto;
+            flex-wrap: wrap;
+        }
+
+        /* Кнопки */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            padding: 12px 24px;
+            border-radius: 11px;
+            border: none;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: .02em;
+            line-height: 1;
+            cursor: pointer;
+            font-family: inherit;
+            text-decoration: none;
+            transition: background-color .2s ease, transform .15s ease,
+                        box-shadow .2s ease, border-color .2s ease;
+        }
+
+        .btn:active { transform: translateY(1px); }
+
+        .btn--primary {
+            background: var(--blue-solid);
+            color: #fff;
+        }
+
+        .btn--primary:hover {
+            background: var(--blue-hover);
+            box-shadow: 0 10px 22px rgba(23, 74, 153, .4);
+        }
+
+        .btn--ghost {
+            background: transparent;
+            border: 2px solid rgba(255,255,255,.3);
+            color: #fff;
+        }
+
+        .btn--ghost:hover {
+            border-color: rgba(255,255,255,.7);
+            background: rgba(255,255,255,.06);
+        }
+
+        .btn--sm { padding: 9px 16px; font-size: 13px; }
+
+        /* Информационная панель о текущей гонке */
+        .info-bar {
+            display: flex;
+            align-items: center;
+            gap: 22px;
+            flex-wrap: wrap;
+        }
+
+        .info-item {
+            display: inline-flex;
+            flex-direction: column;
+            gap: 3px;
+            font-size: 13px;
+        }
+
+        .info-item__label {
+            font-weight: 600;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,.5);
+            font-size: 11px;
+        }
+
+        .info-item__value {
+            font-size: 16px;
+            font-weight: 700;
+            color: #fff;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .info-bar .btn { margin-left: auto; }
+
+        /* Добавление лидера */
+        .add-leader {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .add-leader input {
+            width: 180px;
+            font-size: 15px;
+        }
+
+        /* ============================================================
+           КАРТОЧКА ЛИДЕРА
+           ============================================================ */
+        .leaders-list {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .empty-state {
+            padding: 30px 20px;
+            text-align: center;
+            border: 1px dashed rgba(255,255,255,.2);
+            border-radius: var(--radius);
+            color: rgba(255,255,255,.55);
+            font-size: 15px;
+        }
+
+        .leader-card {
+            background: rgba(0, 0, 0, .55);
+            border: 1px solid rgba(255,255,255,.12);
+            border-radius: 16px;
+            padding: 20px 22px;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .leader-card__header {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            margin-bottom: 16px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid rgba(255,255,255,.1);
+            flex-wrap: wrap;
+        }
+
+        .leader-card__number {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--blue);
+            letter-spacing: -0.01em;
+        }
+
+        .leader-card__start {
+            font-size: 14px;
+            color: rgba(255,255,255,.6);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .leader-card__header .icon-btn {
+            margin-left: auto;
+        }
+
+        /* Кнопки кругов */
+        .lap-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 18px;
+        }
+
+        .lap-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 11px 20px;
+            border-radius: 11px;
+            border: 2px solid rgba(255,255,255,.25);
+            background: transparent;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            transition: background-color .2s ease, border-color .2s ease,
+                        transform .15s ease, opacity .2s ease;
+        }
+
+        .lap-btn:hover:not(:disabled) {
+            background: var(--blue-solid);
+            border-color: var(--blue-solid);
+            transform: translateY(-1px);
+        }
+
+        .lap-btn:active:not(:disabled) { transform: translateY(0); }
+
+        .lap-btn:disabled {
+            opacity: .35;
+            cursor: not-allowed;
+            background: rgba(23, 74, 153, .25);
+            border-color: rgba(74, 139, 240, .4);
+            color: rgba(255,255,255,.7);
+        }
+
+        .lap-btn:disabled::before {
+            content: "✓";
+            font-size: 12px;
+            color: #6ee7b7;
+        }
+
+        /* Таблица отсечек */
+        .splits-wrap {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .splits-table {
+            width: 100%;
+            min-width: 520px;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .splits-table th {
+            text-align: left;
+            padding: 10px 12px;
+            color: rgba(255,255,255,.5);
+            font-weight: 700;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            border-bottom: 1px solid rgba(255,255,255,.1);
+            white-space: nowrap;
+        }
+
+        .splits-table td {
+            padding: 12px;
+            border-bottom: 1px solid rgba(255,255,255,.06);
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+
+        .splits-table tr:last-child td { border-bottom: none; }
+
+        .splits-table td.lap-num {
+            font-weight: 700;
+            color: var(--blue);
+            font-size: 15px;
+        }
+
+        .splits-table td.total {
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .splits-table td.gap {
+            font-weight: 700;
+            color: rgba(255,255,255,.4);
+        }
+
+        .splits-table td.gap.is-losing {
+            color: var(--red);
+        }
+
+        .splits-table td.gap.is-leading {
+            color: #6ee7b7;
+        }
+
+        /* Кнопки-иконки */
+        .icon-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 9px;
+            border: 1px solid rgba(255,255,255,.18);
+            background: rgba(255,255,255,.04);
+            color: rgba(255,255,255,.7);
+            font-size: 18px;
+            line-height: 1;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background-color .18s ease, color .18s ease,
+                        border-color .18s ease, transform .15s ease;
+        }
+
+        .icon-btn:hover {
+            background: rgba(225, 74, 46, .18);
+            border-color: rgba(225, 74, 46, .6);
+            color: #fff;
+            transform: scale(1.06);
+        }
+
+        .icon-btn--danger:hover {
+            background: rgba(225, 74, 46, .3);
+            border-color: var(--red);
+        }
+
+        /* Подсказка */
+        .hint {
+            margin-top: 6px;
+            font-size: 13px;
+            color: rgba(255,255,255,.5);
+            line-height: 1.5;
+        }
+
+        .hint details {
+            cursor: pointer;
+        }
+
+        .hint summary {
+            color: var(--blue);
+            font-weight: 600;
+            padding: 4px 0;
+            list-style: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .hint summary::-webkit-details-marker { display: none; }
+
+        .hint summary::after {
+            content: "▾";
+            font-size: 11px;
+            transition: transform .2s ease;
+        }
+
+        .hint details[open] summary::after { transform: rotate(180deg); }
+
+        .hint__body {
+            padding: 12px 0 4px;
+            color: rgba(255,255,255,.65);
+            max-width: 72ch;
+        }
+
+        .hint__body ol {
+            padding-left: 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        /* ============================================================
+           АДАПТИВ
+           ============================================================ */
+        @media (max-width: 900px) {
+            .main { padding: 32px 0 60px; }
+            .panel { padding: 20px 18px; }
+            .setup-form__actions { margin-left: 0; width: 100%; }
+            .setup-form__actions .btn { flex: 1; justify-content: center; }
+            .info-bar .btn { margin-left: 0; }
+        }
+
+        @media (max-width: 720px) {
+            .container { padding: 0 16px; }
+
+            .header { padding: 14px 0 16px; }
+
+            .header__inner {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 14px;
+            }
+
+            .top-nav {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+
+            .top-btn {
+                justify-content: center;
+                padding: 13px 18px;
+                white-space: normal;
+                text-align: center;
+            }
+
+            .page-head { align-items: flex-start; flex-direction: column; gap: 16px; }
+
+            .setup-form label { min-width: 100%; }
+
+            .add-leader input { flex: 1 1 120px; width: auto; }
+
+            .lap-btn { flex: 1 1 calc(50% - 10px); justify-content: center; }
+
+            .leader-card { padding: 16px 14px; }
+            .leader-card__number { font-size: 19px; }
+        }
+    </style>
+</head>
+
+<body>
+<div class="main-wrap">
+
+    <!-- ======================= ШАПКА ======================= -->
+    <header class="header">
+        <div class="container header__inner">
+
+            <a href="/" class="logo">
+                <span class="logo__mark">
+                    <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <circle cx="20" cy="20" r="19" fill="#174A99"/>
+                        <circle cx="20" cy="20" r="11" fill="#ffffff" opacity=".22"/>
+                        <circle cx="20" cy="20" r="4.5" fill="#C2321A"/>
+                    </svg>
+                </span>
+                <span class="logo__text">
+                    TOOLS
+                </span>
+            </a>
+
+            <nav class="top-nav" aria-label="Основные сервисы">
+                <a class="top-btn top-btn--live"
+                   href="https://biathlon-results.ru/"
+                   target="_blank" rel="noopener">
+                    <span class="top-btn__dot" aria-hidden="true"></span>
+                    Live-результаты
+                </a>
+
+                <a class="top-btn"
+                   href="https://rusada.ru/substances/check-the-medicine/anti-doping.php"
+                   target="_blank" rel="noopener">
+                    Проверка препаратов
+                </a>
+
+                <a class="top-btn"
+                   href="https://biathlonrus.com/sorevnovaniya/rossiyskie/all/2026-2027/"
+                   target="_blank" rel="noopener">
+                    Список соревнований
+                </a>
+            </nav>
+
+        </div>
+    </header>
+
+    <!-- ======================= ОСНОВНОЕ ======================= -->
+    <main class="main">
+        <div class="container">
+
+            <div class="page-head">
+                <h1 class="page-title">Отслеживание <span>лидеров</span></h1>
+
+                <div class="clock" aria-live="off">
+                    <span class="clock__label">Время</span>
+                    <span class="clock__value" id="clock">--:--:--</span>
+                </div>
+            </div>
+
+            <!-- Панель настройки -->
+            <section class="panel" id="setupPanel" aria-label="Настройки гонки">
+                <h2 class="panel__title">Настройки гонки</h2>
+
+                <div class="setup-form">
+                    <label>
+                        <span>Старт первого участника</span>
+                        <input type="time" id="firstStart" step="1" value="11:00:00">
+                    </label>
+
+                    <label>
+                        <span>Тип гонки</span>
+                        <select id="raceType">
+                            <option value="5laps">5 кругов, 4 рубежа</option>
+                            <option value="3laps">3 круга, 2 рубежа (спринт)</option>
+                        </select>
+                    </label>
+
+                    <label>
+                        <span>Интервал старта, сек</span>
+                        <input type="number" id="interval" min="0" max="600" step="5" value="30">
+                    </label>
+
+                    <div class="setup-form__actions">
+                        <button class="btn btn--ghost" id="resetBtn" type="button">Сбросить всё</button>
+                        <button class="btn btn--primary" id="startBtn" type="button">Начать</button>
+                    </div>
+                </div>
+
+                <div class="hint">
+                    <details>
+                        <summary>Как это работает</summary>
+                        <div class="hint__body">
+                            <ol>
+                                <li>Задайте время старта первого участника, тип гонки и интервал между стартами.</li>
+                                <li>Добавляйте номера лидеров — их время старта посчитается автоматически (номер&nbsp;1&nbsp;→&nbsp;заданное время, каждый следующий&nbsp;→&nbsp;+интервал).</li>
+                                <li>Когда лидер пробегает мимо вас — нажмите кнопку нужного круга. Отсечка запишется моментально.</li>
+                                <li>В таблице увидите время с последней отсечки, общее время от старта и отставание от текущего лидера на этом круге.</li>
+                                <li>Ошиблись? Нажмите «×» напротив отсечки — удаление с подтверждением.</li>
+                                <li>Все данные сохраняются в браузере: обновите страницу — ничего не потеряется.</li>
+                            </ol>
+                        </div>
+                    </details>
+                </div>
+            </section>
+
+            <!-- Инфо-панель текущей гонки -->
+            <section class="panel" id="infoPanel" hidden aria-label="Текущая гонка">
+                <div class="info-bar">
+                    <div class="info-item">
+                        <span class="info-item__label">Старт #1</span>
+                        <span class="info-item__value" id="infoStart">—</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-item__label">Тип гонки</span>
+                        <span class="info-item__value" id="infoType">—</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-item__label">Интервал</span>
+                        <span class="info-item__value" id="infoInterval">—</span>
+                    </div>
+                    <button class="btn btn--ghost btn--sm" id="changeSetupBtn" type="button">
+                        Изменить настройки
+                    </button>
+                </div>
+            </section>
+
+            <!-- Добавление лидера -->
+            <section class="panel" id="addPanel" hidden aria-label="Добавить участника">
+                <h2 class="panel__title">Добавить участника</h2>
+                <div class="add-leader">
+                    <input type="number" id="leaderNumber" min="1" max="999" step="1" placeholder="Номер">
+                    <button class="btn btn--primary" id="addLeaderBtn" type="button">+ Добавить</button>
+                </div>
+            </section>
+
+            <!-- Список лидеров -->
+            <section class="leaders-list" id="leadersList" aria-live="polite"></section>
+
+        </div>
+    </main>
+</div>
+
+<script>
+/* ============================================================
+   КОНСТАНТЫ И СОСТОЯНИЕ
+   ============================================================ */
+const STORAGE_KEY = 'biathlon_leaders_state_v1';
+
+const LAPS = {
+    '5laps': 5,
+    '3laps': 3
+};
+
+const RACE_LABELS = {
+    '5laps': '5 кругов, 4 рубежа',
+    '3laps': '3 круга, 2 рубежа'
+};
+
+const DEFAULT_STATE = {
+    started: false,
+    raceType: '5laps',
+    firstStartTimeStr: '11:00:00',
+    firstStartTimeMs: null,
+    intervalSec: 30,
+    leaders: []   // { number, startTimeMs, splits: [ms|null, ...] }
+};
+
+let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+
+/* ============================================================
+   УТИЛИТЫ
+   ============================================================ */
+function pad(n) { return String(n).padStart(2, '0'); }
+
+/** Форматирует миллисекунды в mm:ss.d или h:mm:ss.d */
+function formatTime(ms) {
+    if (ms == null || isNaN(ms)) return '—';
+    const neg = ms < 0;
+    ms = Math.abs(ms);
+    const totalSec = ms / 1000;
+    const h = Math.floor(totalSec / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = Math.floor(totalSec % 60);
+    const tenth = Math.floor((totalSec * 10) % 10);
+    const str = h > 0
+        ? `${h}:${pad(m)}:${pad(s)}.${tenth}`
+        : `${pad(m)}:${pad(s)}.${tenth}`;
+    return neg ? '-' + str : str;
+}
+
+/** Форматирует ms в часы:минуты:секунды (для отображения времени старта) */
+function formatClock(ms) {
+    const d = new Date(ms);
+    return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+/** Парсит строку "HH:MM:SS" или "HH:MM" в ms сегодняшнего дня */
+function parseStartTime(timeStr) {
+    if (!timeStr) return null;
+    const [h, m, s = 0] = timeStr.split(':').map(Number);
+    if (isNaN(h) || isNaN(m)) return null;
+    const d = new Date();
+    d.setHours(h, m, s, 0);
+    return d.getTime();
+}
+
+/* ============================================================
+   СОХРАНЕНИЕ / ЗАГРУЗКА
+   ============================================================ */
+function saveState() {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) {
+        console.warn('Не удалось сохранить состояние:', e);
+    }
+}
+
+function loadState() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        state = { ...DEFAULT_STATE, ...parsed };
+        // Нормализуем leaders, если что-то пошло не так
+        if (!Array.isArray(state.leaders)) state.leaders = [];
+        state.leaders.forEach(l => {
+            if (!Array.isArray(l.splits)) l.splits = [];
+        });
+    } catch (e) {
+        console.warn('Не удалось загрузить состояние:', e);
+    }
+}
+
+/* ============================================================
+   ДЕЙСТВИЯ
+   ============================================================ */
+function startTracking() {
+    const timeStr = document.getElementById('firstStart').value;
+    const raceType = document.getElementById('raceType').value;
+    const interval = parseInt(document.getElementById('interval').value, 10);
+
+    if (!timeStr) {
+        alert('Укажите время старта первого участника');
+        return;
+    }
+    if (isNaN(interval) || interval < 0) {
+        alert('Введите корректный интервал (неотрицательное число)');
+        return;
+    }
+
+    const firstMs = parseStartTime(timeStr);
+    if (firstMs == null) {
+        alert('Некорректный формат времени');
+        return;
+    }
+
+    state.firstStartTimeStr = timeStr;
+    state.firstStartTimeMs = firstMs;
+    state.raceType = raceType;
+    state.intervalSec = interval;
+    state.started = true;
+
+    saveState();
+    render();
+}
+
+function resetAll() {
+    if (!confirm('Сбросить все данные: гонку, участников и отсечки?')) return;
+    state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+    try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+    render();
+}
+
+function changeSetup() {
+    if (!confirm('Вернуться к настройкам? Текущие данные будут удалены.')) return;
+    resetAll();
+}
+
+function addLeader(number) {
+    if (!state.started) return;
+    if (!Number.isInteger(number) || number < 1) {
+        alert('Введите корректный номер участника (целое число ≥ 1)');
+        return;
+    }
+    if (state.leaders.some(l => l.number === number)) {
+        alert(`Участник #${number} уже добавлен`);
+        return;
+    }
+
+    const laps = LAPS[state.raceType] || 5;
+    const startTimeMs = state.firstStartTimeMs + (number - 1) * state.intervalSec * 1000;
+
+    state.leaders.push({
+        number,
+        startTimeMs,
+        splits: new Array(laps).fill(null)
+    });
+    state.leaders.sort((a, b) => a.number - b.number);
+
+    saveState();
+    render();
+}
+
+function removeLeader(number) {
+    const leader = state.leaders.find(l => l.number === number);
+    if (!leader) return;
+    if (!confirm(`Удалить участника #${number} со всеми отсечками?`)) return;
+
+    state.leaders = state.leaders.filter(l => l.number !== number);
+    saveState();
+    render();
+}
+
+function recordSplit(number, lapIdx) {
+    const leader = state.leaders.find(l => l.number === number);
+    if (!leader) return;
+    if (leader.splits[lapIdx] != null) return; // уже зафиксировано
+
+    leader.splits[lapIdx] = Date.now();
+    saveState();
+    render();
+}
+
+function removeSplit(number, lapIdx) {
+    const leader = state.leaders.find(l => l.number === number);
+    if (!leader) return;
+    if (leader.splits[lapIdx] == null) return;
+
+    if (!confirm(`Удалить отсечку на круге ${lapIdx + 1} у участника #${number}?`)) return;
+
+    leader.splits[lapIdx] = null;
+    saveState();
+    render();
+}
+
+/* ============================================================
+   РЕНДЕР
+   ============================================================ */
+function render() {
+    const laps = LAPS[state.raceType] || 5;
+
+    // Панели
+    document.getElementById('setupPanel').hidden = state.started;
+    document.getElementById('infoPanel').hidden = !state.started;
+    document.getElementById('addPanel').hidden = !state.started;
+
+    // Поля формы (нужны при возврате)
+    document.getElementById('firstStart').value = state.firstStartTimeStr || '11:00:00';
+    document.getElementById('raceType').value = state.raceType;
+    document.getElementById('interval').value = state.intervalSec;
+
+    // Инфо-панель
+    if (state.started) {
+        document.getElementById('infoStart').textContent = state.firstStartTimeStr;
+        document.getElementById('infoType').textContent = RACE_LABELS[state.raceType] || '—';
+        document.getElementById('infoInterval').textContent = state.intervalSec + ' сек';
+    }
+
+    const list = document.getElementById('leadersList');
+
+    if (!state.started) {
+        list.innerHTML = '';
+        return;
+    }
+
+    if (state.leaders.length === 0) {
+        list.innerHTML = `<div class="empty-state">
+            Добавьте первого участника, чтобы начать отслеживание
+        </div>`;
+        return;
+    }
+
+    // Минимальное общее время на каждом круге среди всех участников
+    const minTotal = new Array(laps).fill(null);
+    state.leaders.forEach(l => {
+        l.splits.forEach((ts, i) => {
+            if (ts == null) return;
+            const total = ts - l.startTimeMs;
+            if (minTotal[i] == null || total < minTotal[i]) minTotal[i] = total;
+        });
+    });
+
+    list.innerHTML = state.leaders.map(leader => {
+        const startClock = formatClock(leader.startTimeMs);
+
+        // Кнопки кругов
+        const lapBtns = Array.from({ length: laps }, (_, i) => {
+            const done = leader.splits[i] != null;
+            return `<button class="lap-btn"
+                            data-action="split"
+                            data-number="${leader.number}"
+                            data-lap="${i}"
+                            ${done ? 'disabled' : ''}
+                            type="button">Круг ${i + 1}</button>`;
+        }).join('');
+
+        // Строки таблицы
+        const rows = leader.splits.map((ts, i) => {
+            if (ts == null) return '';
+            const prev = i === 0
+                ? leader.startTimeMs
+                : (leader.splits[i - 1] != null ? leader.splits[i - 1] : leader.startTimeMs);
+            const segment = ts - prev;
+            const total = ts - leader.startTimeMs;
+
+            const best = minTotal[i];
+            const gap = best != null ? total - best : 0;
+            const gapClass = gap > 0 ? 'gap is-losing' : 'gap is-leading';
+            const gapText = gap > 0 ? '+' + formatTime(gap) : '—';
+
+            return `<tr>
+                <td class="lap-num">${i + 1}</td>
+                <td>${formatTime(segment)}</td>
+                <td class="total">${formatTime(total)}</td>
+                <td class="${gapClass}">${gapText}</td>
+                <td>
+                    <button class="icon-btn"
+                            data-action="remove-split"
+                            data-number="${leader.number}"
+                            data-lap="${i}"
+                            type="button"
+                            title="Удалить отсечку">×</button>
+                </td>
+            </tr>`;
+        }).join('');
+
+        const table = rows
+            ? `<div class="splits-wrap">
+                <table class="splits-table">
+                    <thead>
+                        <tr>
+                            <th>Круг</th>
+                            <th>С последней</th>
+                            <th>Общее</th>
+                            <th>Отставание</th>
+                            <th aria-label="Удалить"></th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+               </div>`
+            : '';
+
+        return `<div class="leader-card">
+            <div class="leader-card__header">
+                <span class="leader-card__number">#${leader.number}</span>
+                <span class="leader-card__start">Старт: ${startClock}</span>
+                <button class="icon-btn icon-btn--danger"
+                        data-action="remove-leader"
+                        data-number="${leader.number}"
+                        type="button"
+                        title="Удалить участника">×</button>
+            </div>
+            <div class="lap-buttons">${lapBtns}</div>
+            ${table}
+        </div>`;
+    }).join('');
+}
+
+/* ============================================================
+   СОБЫТИЯ
+   ============================================================ */
+document.getElementById('startBtn').addEventListener('click', startTracking);
+document.getElementById('resetBtn').addEventListener('click', resetAll);
+document.getElementById('changeSetupBtn').addEventListener('click', changeSetup);
+
+document.getElementById('addLeaderBtn').addEventListener('click', () => {
+    const input = document.getElementById('leaderNumber');
+    const num = parseInt(input.value, 10);
+    if (isNaN(num)) {
+        alert('Введите номер участника');
+        return;
+    }
+    addLeader(num);
+    input.value = '';
+    input.focus();
+});
+
+document.getElementById('leaderNumber').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        document.getElementById('addLeaderBtn').click();
+    }
+});
+
+// Делегирование событий по списку лидеров
+document.getElementById('leadersList').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-action]');
+    if (!btn) return;
+    const action = btn.dataset.action;
+    const number = parseInt(btn.dataset.number, 10);
+    const lap = btn.dataset.lap != null ? parseInt(btn.dataset.lap, 10) : null;
+
+    if (action === 'split')              recordSplit(number, lap);
+    else if (action === 'remove-split')  removeSplit(number, lap);
+    else if (action === 'remove-leader') removeLeader(number);
+});
+
+/* ============================================================
+   ЧАСЫ
+   ============================================================ */
+function tickClock() {
+    const d = new Date();
+    document.getElementById('clock').textContent =
+        `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+setInterval(tickClock, 250);
+tickClock();
+
+/* ============================================================
+   СТАРТ
+   ============================================================ */
+loadState();
+render();
+</script>
+</body>
+</html>
