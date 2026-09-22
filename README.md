@@ -1,6 +1,10 @@
 <h1>Hello!</h1>
 <p>This project was created to make work easier for coaches. Here you can find the necessary tools.</p>
 
+<strong>
+<a href="https://biathlon-tools.relaxdev.ru/">LINK</a>
+</strong>
+
 <img src="https://i.pinimg.com/1200x/16/a5/89/16a589eb86635986e4d1dfd744bb33cd.jpg"
   width="300" 
   height="300">
