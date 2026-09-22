@@ -3,7 +3,7 @@
 
 <img src="https://i.pinimg.com/1200x/16/a5/89/16a589eb86635986e4d1dfd744bb33cd.jpg"
   width="300" 
-  height="200">
+  height="300">
 
 <h2>Request</h2>
 <p>If you run into an error, send feedback.</p>
