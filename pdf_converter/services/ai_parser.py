@@ -22,39 +22,108 @@ logger = logging.getLogger(__name__)
 # ============================================================
 # ПРОМПТ
 # ============================================================
-SYSTEM_PROMPT = """Ты — парсер протоколов соревнований по биатлону.
-На вход получаешь «сырой» текст протокола (результаты гонки).
-Задача: извлечь ТОЛЬКО техническую информацию о гонке и список спортсменов.
-Всё остальное (судьи, реквизиты, погода, логотипы, колонтитулы, номера страниц,
-пустые строки, рекламные блоки) — игнорируй.
+SYSTEM_PROMPT = """Ты — эксперт-парсер протоколов биатлонных соревнований.
+На вход получаешь «сырой» текст протокола (результаты гонки, часто криво извлечённые из PDF).
+Задача: извлечь ТОЛЬКО данные о спортсменах и минимальную техническую информацию о гонке.
+Всё остальное (судьи, техделегаты, погода, реквизиты, логотипы, колонтитулы,
+номера страниц, реклама, организаторы, спонсоры) — ИГНОРИРУЙ.
 
 Верни строго JSON-объект такой структуры:
 
 {
   "tech": [
-    {"key": "Дата и время", "value": "..."},
-    {"key": "Дисциплина", "value": "..."}
+    {"key": "Соревнование",    "value": "ПЕРВЕНСТВО РОССИИ ПО БИАТЛОНУ"},
+    {"key": "Место проведения", "value": "Г. САРАНСК (РЕСПУБЛИКА МОРДОВИЯ)"},
+    {"key": "Дата и время",    "value": "ЧТ 17 СЕН 2026 14:30"},
+    {"key": "ЕКП",             "value": "2040130022045756"},
+    {"key": "Дисциплина",      "value": "РОЛЛЕРЫ-ГОНКА 7,5 КМ ДЕВУШКИ 15-16 ЛЕТ"}
   ],
+  "race_meta": {
+    "type": "individual",
+    "shooting_count": 4,
+    "shooting_columns": ["Л", "С", "Л", "С"]
+  },
   "athletes": [
     {
       "place": 1,
-      "start_num": 29,
-      "name": "БУРДУКОВ Илья",
-      "region": "МОС",
-      "year": 2012,
-      "clean_time": "18:37,2",
-      "time": "19:07,2",
+      "start_num": 131,
+      "name": "АЛЕКСЕЕВ Кирилл Иванович",
+      "region": "ТЮМ",
+      "year": 2011,
+      "rank_qual": "2 разряд",
+      "clean_time": "25:45.9",
+      "shooting": [0, 0, 0, 1],
+      "shooting_sum": 1,
+      "time": "26:30.9",
       "lost": "",
       "points": "",
+      "rank_final": "КМС",
+      "note": ""
     }
   ]
 }
 
-Правила:
-- Поля place, start_num, year - числа.
-- Время (clean_time, time, lost) — строка с запятой как разделителем: "18:37,2".
-- Если поле отсутствует — оставь пустую строку "".
-- Никаких пояснений, только JSON.
+=== ОПРЕДЕЛЕНИЕ ТИПА ГОНКИ (race_meta) ===
+Смотри заголовок протокола (первые 30 строк):
+- "individual" — если есть «ГОНКА», «ИНДИВИДУАЛЬНАЯ», «РОЛЛЕРЫ-ГОНКА».
+  Количество рубежей = 4 (2 лежа + 2 стоя). shooting_columns = ["Л","С","Л","С"].
+- "sprint" — если есть «СПРИНТ». 2 рубежа. shooting_columns = ["Л","С"].
+- "mass_start" — если «МАСС-СТАРТ». 2 рубежа. shooting_columns = ["Л","С"].
+- "pursuit" — если «ПРЕСЛЕДОВАНИЕ» или «ПАРСУТ». 4 рубежа. shooting_columns = ["Л","С","Л","С"].
+- "relay" — если «ЭСТАФЕТА». 2 рубежа.
+- Если тип неясен — type="other", shooting_count=2, shooting_columns=["Л","С"].
+
+=== ПРАВИЛА ПО СПОРТСМЕНАМ ===
+
+Обязательные поля (всегда, для каждого спортсмена):
+- place      (int)   — место в протоколе
+- start_num  (int)   — стартовый номер
+- name       (str)   — ФИО как в протоколе (2 или 3 слова)
+- year       (int)   — только год рождения (например, 2011)
+- time       (str)   — итоговое время финиша, формат "MM:SS.D" или "M:SS.D" или "H:MM:SS.D"
+- shooting   (list[int]) — промахи по рубежам, столько значений, сколько столбцов (2 или 4)
+- shooting_sum (int) — суммарные промахи
+
+Необязательные поля (если отсутствуют — пустая строка ""):
+- region     — код региона: 2-4 заглавные буквы (МОС, ТЮМ, БАШ, СПБ, ЧЕЛ, НВС, ...)
+- rank_qual  — разряд из столбца «Разряд» (КМС, МС, 1 разряд, 2 разряд, 3 разряд, 1 юр)
+- clean_time — «чистое время» (только для индивидуальных гонок)
+- lost       — отставание от лидера, со знаком "+": "+1:29.2" (у лидера пусто)
+- points     — очки (из столбца «Очки Рег.» или «Очки»)
+- rank_final — выполненный разряд (из столбца «Вып. разряд»)
+- note       — организация спортсмена (то, что идёт ОТДЕЛЬНОЙ строкой после основной:
+  "Республика Башкортостан, г. Уфа, ГБУ ДО СШОР по биатлону РБ")
+
+=== ЧТО НЕ ВКЛЮЧАТЬ В athletes ===
+НИКОГДА:
+- судей, техделегатов, главного судью, главного секретаря (они в шапке и в конце);
+- участников из разделов «Не стартовали», «Не финишировали», «Дисквалифицированы»;
+- строки из «Решения жюри»;
+- пустые строки, заголовки, подписи, рекламу.
+
+=== ОСОБЫЕ СЛУЧАИ ===
+1. Дублирующиеся номера в строке (OCR-склейка). Пример сырого текста:
+   "1 131131АЛЕКСЕЕВ Кирилл Иванович" — это НЕ два номера 131, а place=1, start_num=131.
+   Нормальный вид: "1 131 АЛЕКСЕЕВ Кирилл Иванович".
+2. ФИО из 2 слов ("САХРАН Виктория") или 3 слов ("АЛЕКСЕЕВ Кирилл Иванович") — сохраняй как есть.
+3. Повторяющиеся ФИО вроде "ПАСКОВА СОФИЯ, ПАСКОВА СОФИЯ" — оставь одну запись.
+4. Если РЕГ отсутствует в строке — оставь region = "".
+5. Если столбцы стрельбы помечены как «Л С Л С» — значит 4 рубежа, shooting = [l1, s1, l2, s2].
+   Если «Л С» — 2 рубежа, shooting = [l1, s1].
+6. Время сохраняй с запятой: "18:37,2" (не "18:37.2"). Это важно для Excel.
+7. Если у спортсмена в отставании стоит "0.0" или пусто — оставь lost = "".
+
+=== ТЕХНИЧЕСКАЯ ИНФОРМАЦИЯ (tech) ===
+Ищи в первых 40 строках текста:
+- Соревнование — общее название турнира
+- Место проведения — город, стадион
+- Дата и время — полная дата и время старта гонки
+- ЕКП — числовой код (только цифры)
+- Дисциплина — строка с типом гонки, дистанцией и категорией
+
+=== ФОРМАТ ОТВЕТА ===
+Только валидный JSON-объект. Никаких пояснений, комментариев, markdown-обёрток.
+Если поле отсутствует — не выдумывай: "" для строк, 0 для чисел, [] для списков.
 """
 
 
@@ -91,7 +160,6 @@ class GigaChatProvider(BaseAIProvider):
         self._access_token = None
 
     def _get_token(self) -> str:
-        """Получает access token по Authorization key."""
         if self._access_token:
             return self._access_token
 
@@ -241,9 +309,14 @@ def _parse_json_response(raw: str) -> dict:
     if "athletes" not in data or not isinstance(data["athletes"], list):
         raise ValueError("В ответе нет списка спортсменов")
 
+    race_meta = data.get("race_meta") or {}
+    if not race_meta.get("shooting_columns"):
+        race_meta["shooting_columns"] = ["Л", "С"]
+
     return {
-        "tech": data.get("tech") or [],
-        "athletes": [_normalize_athlete(a) for a in data["athletes"]],
+        "tech":      data.get("tech") or [],
+        "race_meta": race_meta,
+        "athletes":  [_normalize_athlete(a) for a in data["athletes"]],
     }
 
 
@@ -260,23 +333,31 @@ def _normalize_athlete(a: dict) -> dict:
     def time_str(v):
         return s(v).replace(".", ",")
 
+    # Стрельба: поддерживаем и список, и старые поля l1..l3
+    if isinstance(a.get("shooting"), list):
+        shooting = [num(x) for x in a["shooting"]]
+    else:
+        shooting = [num(a.get(f"l{i}")) for i in range(1, 5)]
+        while len(shooting) > 2 and shooting[-1] == 0:
+            shooting.pop()
+
+    sum_val = num(a.get("shooting_sum") or a.get("sum"), sum(shooting))
+
     return {
-        "place":      num(a.get("place")),
-        "start_num":  num(a.get("start_num")),
-        "name":       s(a.get("name")),
-        "region":     s(a.get("region")),
-        "year":       num(a.get("year")),
-        "clean_time": time_str(a.get("clean_time")),
-        "rank_qual":  s(a.get("rank_qual")),
-        "l1":         num(a.get("l1")),
-        "l2":         num(a.get("l2")),
-        "l3":         num(a.get("l3")),
-        "sum":        num(a.get("sum")),
-        "time":       time_str(a.get("time")),
-        "lost":       time_str(a.get("lost")),
-        "points":     s(a.get("points")),
-        "rank_final": s(a.get("rank_final")),
-        "note":       s(a.get("note")),
+        "place":        num(a.get("place")),
+        "start_num":    num(a.get("start_num") or a.get("start")),
+        "name":         s(a.get("name")),
+        "region":       s(a.get("region")),
+        "year":         num(a.get("year")),
+        "rank_qual":    s(a.get("rank_qual")),
+        "clean_time":   time_str(a.get("clean_time")),
+        "shooting":     shooting,
+        "shooting_sum": sum_val,
+        "time":         time_str(a.get("time")),
+        "lost":         time_str(a.get("lost")),
+        "points":       s(a.get("points")),
+        "rank_final":   s(a.get("rank_final")),
+        "note":         s(a.get("note")),
     }
 
 
@@ -291,22 +372,38 @@ REGION_CODES = [
     'КОС', 'АРХ', 'ВОЛ', 'МУР', 'КРЫ', 'АДЫ', 'СТА', 'РОС', 'АСТ', 'КБР',
     'КОМ', 'МАР', 'МОР', 'ХАК', 'АЛТ', 'ТЫВ', 'БУР', 'ЗАБ', 'ИРК', 'ОРЕ',
     'ПРИ', 'ХАБ', 'АМУ', 'ЕВР', 'МАГ', 'САХ', 'ЧУК', 'СЕВ', 'ЧЕЧ', 'ИНГ',
-    'КАБ', 'КАР', 'ОСЕ', 'ДАГ', 'КЧР', 'КРД',
+    'КАБ', 'КАР', 'ОСЕ', 'ДАГ', 'КЧР', 'КРД', 'ЧУВ', 'КИР', 'ТАМ', 'СВЕ',
+    'ЯКУ', 'КАМ', 'КГА', 'САХ', 'МУР', 'ТЫВ', 'ХАК', 'АЛТ', 'ОМС', 'ТОМ',
 ]
-REGION_RE = r'(?:' + '|'.join(REGION_CODES) + r')'
+REGION_RE = r'(?:' + '|'.join(set(REGION_CODES)) + r')'
 
-ATHLETE_RE = re.compile(
+# 2 рубежа: Л С Сум
+ATHLETE_RE_2 = re.compile(
     r'^(?P<place>\d{1,3})\s+(?P<start>\d{1,3})'
-    r'\s+(?P<name>[А-ЯЁ][А-Яа-яёЁ\-]+(?:\s+[А-ЯЁ][А-Яа-яёЁ\-]+)+)'
-    r'\s+(?P<region>' + REGION_RE + r')'
-    r'\s+(?P<year>20\d{2})'
-    r'\s+(?P<clean_time>\d{1,3}:\d{2}[,.]\d{1,2})'
-    r'\s+(?P<rank_qual>(?:\d+\s*разряд|\d+\s*юр))'
-    r'\s+(?P<l1>\d)\s+(?P<l2>\d)\s+(?P<l3>\d)\s+(?P<sum>\d{1,2})'
+    r'\s+(?P<name>[А-ЯЁ][А-Яа-яёЁ\-]+(?:\s+[А-ЯЁ][А-Яа-яёЁ\-]+){1,2})'
+    r'(?:\s+(?P<region>' + REGION_RE + r'))?'
+    r'\s+(?P<date>\d{1,2}\.\d{1,2}\.\d{4})'
+    r'\s+(?P<rank_qual>(?:КМС|МС|1\s*разряд|2\s*разряд|3\s*разряд|1\s*юр|2\s*юр|3\s*юр))'
+    r'\s+(?P<l1>\d)\s+(?P<s1>\d)\s+(?P<sum>\d{1,2})'
     r'\s+(?P<time>\d{1,3}:\d{2}[,.]\d{1,2})'
     r'(?:\s+(?P<lost>\+\d{1,3}:\d{2}[,.]\d{1,2}))?'
-    r'(?:\s+(?P<rank_final>\d+\s*(?:разряд|юр)))?'
-    r'(?:\s+(?P<note>.+?))?\s*$'
+    r'(?:\s+(?P<points>\d+))?'
+    r'(?:\s+(?P<rank_final>(?:КМС|МС|1\s*разряд|2\s*разряд|3\s*разряд|1\s*юр)))?'
+    r'\s*$'
+)
+
+# 4 рубежа: Л С Л С Сум
+ATHLETE_RE_4 = re.compile(
+    r'^(?P<place>\d{1,3})\s+(?P<start>\d{1,3})'
+    r'\s+(?P<name>[А-ЯЁ][А-Яа-яёЁ\-]+(?:\s+[А-ЯЁ][А-Яа-яёЁ\-]+){1,2})'
+    r'(?:\s+(?P<region>' + REGION_RE + r'))?'
+    r'\s+(?P<date>\d{1,2}\.\d{1,2}\.\d{4})'
+    r'\s+(?P<rank_qual>(?:КМС|МС|1\s*разряд|2\s*разряд|3\s*разряд|1\s*юр))'
+    r'\s+(?P<clean_time>\d{1,3}:\d{2}[,.]\d{1,2})'
+    r'\s+(?P<l1>\d)\s+(?P<s1>\d)\s+(?P<l2>\d)\s+(?P<s2>\d)\s+(?P<sum>\d{1,2})'
+    r'\s+(?P<time>\d{1,3}:\d{2}[,.]\d{1,2})'
+    r'(?:\s+(?P<lost>\+\d{1,3}:\d{2}[,.]\d{1,2}))?'
+    r'\s*$'
 )
 
 
@@ -316,45 +413,66 @@ def _norm(line: str) -> str:
     return re.sub(r'\s+', ' ', line).strip()
 
 
+def _detect_race_type(text: str) -> dict:
+    """Определяет тип гонки по заголовку протокола."""
+    head = "\n".join(text.split("\n")[:40]).upper()
+
+    if re.search(r'СПРИНТ', head):
+        return {"type": "sprint", "shooting_count": 2, "shooting_columns": ["Л", "С"]}
+    if re.search(r'МАСС-?СТАРТ', head):
+        return {"type": "mass_start", "shooting_count": 2, "shooting_columns": ["Л", "С"]}
+    if re.search(r'ПРЕСЛЕДОВАНИЕ|ПАРСУТ', head):
+        return {"type": "pursuit", "shooting_count": 4, "shooting_columns": ["Л", "С", "Л", "С"]}
+    if re.search(r'ЭСТАФЕТ', head):
+        return {"type": "relay", "shooting_count": 2, "shooting_columns": ["Л", "С"]}
+    if re.search(r'ГОНКА|ИНДИВИДУАЛЬН', head):
+        return {"type": "individual", "shooting_count": 4, "shooting_columns": ["Л", "С", "Л", "С"]}
+    return {"type": "other", "shooting_count": 2, "shooting_columns": ["Л", "С"]}
+
+
 def regex_extract(text: str) -> dict:
+    race_meta = _detect_race_type(text)
+    use_4 = race_meta["shooting_count"] == 4
+    pattern = ATHLETE_RE_4 if use_4 else ATHLETE_RE_2
+
     athletes = []
     for raw in text.split('\n'):
         line = _norm(raw)
-        m = ATHLETE_RE.match(line)
+        m = pattern.match(line)
         if not m:
             continue
         g = m.groupdict()
+
+        if use_4:
+            shooting = [int(g['l1']), int(g['s1']), int(g['l2']), int(g['s2'])]
+        else:
+            shooting = [int(g['l1']), int(g['s1'])]
+
         athletes.append({
-            'place':      int(g['place']),
-            'start_num':  int(g['start']),
-            'name':       g['name'].strip(),
-            'region':     g['region'],
-            'year':       int(g['year']),
-            'clean_time': g['clean_time'].replace('.', ','),
-            'rank_qual':  (g['rank_qual'] or '').strip(),
-            'l1':         int(g['l1']),
-            'l2':         int(g['l2']),
-            'l3':         int(g['l3']),
-            'sum':        int(g['sum']),
-            'time':       g['time'].replace('.', ','),
-            'lost':       (g['lost'] or '').replace('.', ','),
-            'points':     '',
-            'rank_final': (g['rank_final'] or '').strip(),
-            'note':       (g['note'] or '').strip(),
+            'place':        int(g['place']),
+            'start_num':    int(g['start']),
+            'name':         g['name'].strip(),
+            'region':       (g.get('region') or '').strip(),
+            'year':         int(g['date'].split('.')[-1]),
+            'rank_qual':    (g.get('rank_qual') or '').strip(),
+            'clean_time':   (g.get('clean_time') or '').replace('.', ','),
+            'shooting':     shooting,
+            'shooting_sum': int(g['sum']),
+            'time':         g['time'].replace('.', ','),
+            'lost':         (g.get('lost') or '').replace('.', ','),
+            'points':       (g.get('points') or '').strip(),
+            'rank_final':   (g.get('rank_final') or '').strip(),
+            'note':         '',
         })
 
     tech = []
     head = [_norm(l) for l in text.split('\n')[:60]]
     for line in head:
-        if re.search(r'(ГОНКА|СПРИНТ|ЭСТАФЕТА|ПАТРУЛЬ)', line, re.I) \
-                and re.search(r'\d+\s*КМ', line, re.I):
+        if re.search(r'(ГОНКА|СПРИНТ|ЭСТАФЕТА|РОЛЛЕРЫ)', line, re.I) and re.search(r'\d+[,.]?\d*\s*КМ', line, re.I):
             tech.append({'key': 'Дисциплина', 'value': line})
             break
     for line in head:
-        m = re.search(
-            r'([А-Я]{2}\s+\d{1,2}\s+[А-Я]{3,9}\s+\d{4}\s+\d{1,2}:\d{2})',
-            line,
-        )
+        m = re.search(r'([А-Я]{2}\s+\d{1,2}\s+[А-Я]{3,9}\s+\d{4}\s+\d{1,2}:\d{2})', line)
         if m:
             tech.append({'key': 'Дата и время', 'value': m.group(1)})
             break
@@ -363,8 +481,16 @@ def regex_extract(text: str) -> dict:
         if m:
             tech.append({'key': 'ЕКП', 'value': m.group(1)})
             break
+    for line in head:
+        if re.search(r'ПЕРВЕНСТВ|ЧЕМПИОНАТ|КУБОК|СОРЕВНОВАНИ', line, re.I):
+            tech.append({'key': 'Соревнование', 'value': line})
+            break
+    for line in head:
+        if re.search(r'ОБЛАСТЬ|КРАЙ|РЕСПУБЛИКА', line) and re.search(r'[ГД]\.\s+[А-Я]', line):
+            tech.append({'key': 'Место проведения', 'value': line})
+            break
 
-    return {'tech': tech, 'athletes': athletes}
+    return {'tech': tech, 'race_meta': race_meta, 'athletes': athletes}
 
 
 # ============================================================
