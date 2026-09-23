@@ -16,9 +16,9 @@ from dotenv import load_dotenv
 # ============================================================
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Загружаем переменные из .env (если файл есть рядом с manage.py)
+# Загружаем переменные из .env (ищем в двух местах)
 load_dotenv(BASE_DIR.parent / '.env')
-load_dotenv(BASE_DIR / '.env')          # на случай, если .env лежит рядом с settings.py
+load_dotenv(BASE_DIR / '.env')
 
 
 # ============================================================
@@ -90,7 +90,7 @@ INSTALLED_APPS = [
 # ============================================================
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',      # раздача статики
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -163,13 +163,11 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# Дополнительные папки с исходной статикой (если есть)
 STATICFILES_DIRS = []
 _static_dir = BASE_DIR / 'static'
 if _static_dir.exists():
     STATICFILES_DIRS.append(_static_dir)
 
-# Whitenoise — сжатие и кэширование
 STORAGES = {
     'default': {
         'BACKEND': 'django.core.files.storage.FileSystemStorage',
@@ -186,9 +184,8 @@ STORAGES = {
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# Ограничения на загрузку (PDF-протоколы)
-DATA_UPLOAD_MAX_MEMORY_SIZE = 25 * 1024 * 1024      # 25 МБ
-FILE_UPLOAD_MAX_MEMORY_SIZE = 25 * 1024 * 1024      # 25 МБ
+DATA_UPLOAD_MAX_MEMORY_SIZE = 25 * 1024 * 1024
+FILE_UPLOAD_MAX_MEMORY_SIZE = 25 * 1024 * 1024
 
 
 # ============================================================
@@ -196,7 +193,6 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 25 * 1024 * 1024      # 25 МБ
 # ============================================================
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Логирование в stdout (важно для RelaxDev — там ловят stdout)
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -213,31 +209,26 @@ LOGGING = {
 
 
 # ============================================================
-# ПРОДАКШЕН-НАСТРОЙКИ (применяются только при DEBUG=False)
+# ПРОДАКШЕН-НАСТРОЙКИ (только при DEBUG=False)
 # ============================================================
 if not DEBUG:
-    # --- HTTPS за прокси RelaxDev ---
-    # Прокси добавляет заголовок X-Forwarded-Proto: https.
-    # Благодаря этой строке Django понимает, что запрос уже защищён,
-    # и не делает лишний редирект (иначе — бесконечный цикл).
+    # HTTPS за прокси RelaxDev
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    USE_X_FORWARDED_HOST = True
 
-    # --- Редирект на HTTPS ---
+    # Редирект на HTTPS
     SECURE_SSL_REDIRECT = True
 
-    # --- Cookies только по HTTPS ---
+    # Cookies только по HTTPS
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
 
-    # --- HSTS ---
-    SECURE_HSTS_SECONDS = 31536000                  # 1 год
+    # HSTS
+    SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
 
-    # --- Прочие заголовки безопасности ---
+    # Прочие заголовки
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_REFERRER_POLICY = 'same-origin'
     X_FRAME_OPTIONS = 'DENY'
-
-    # --- Доверяем прокси при определении схемы (http/https) ---
-    USE_X_FORWARDED_HOST = True
