@@ -85,7 +85,7 @@
             position: sticky;
             top: 0;
             z-index: 100;
-            background: rgba(0, 0, 0, .75);
+            background: rgba(0, 0, 0, .78);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             border-bottom: 1px solid rgba(255,255,255,.12);
@@ -146,7 +146,6 @@
            ============================================================ */
         .main { padding: 14px 0 30px; }
 
-        /* ---------- ПАНЕЛИ ---------- */
         .panel {
             background: rgba(10, 10, 10, .78);
             border: 1px solid rgba(255,255,255,.12);
@@ -166,7 +165,6 @@
             margin-bottom: 14px;
         }
 
-        /* ---------- ФОРМА НАСТРОЙКИ ---------- */
         .setup-form {
             display: flex;
             flex-direction: column;
@@ -236,7 +234,6 @@
             gap: 12px;
         }
 
-        /* ---------- КНОПКИ ---------- */
         .btn {
             display: inline-flex;
             align-items: center;
@@ -283,20 +280,8 @@
 
         .btn--ghost:hover { border-color: rgba(255,255,255,.6); }
 
-        .btn--danger {
-            background: transparent;
-            border: 1.5px solid rgba(225, 74, 46, .5);
-            color: #ff8b73;
-        }
-
-        .btn--danger:hover {
-            background: rgba(225, 74, 46, .15);
-            border-color: var(--red);
-        }
-
         .btn--full { width: 100%; }
 
-        /* ---------- КОМПАКТНАЯ ПАНЕЛЬ ГОНКИ ---------- */
         .race-bar {
             display: flex;
             flex-wrap: wrap;
@@ -333,7 +318,6 @@
             font-size: 13px;
         }
 
-        /* ---------- ФОРМА ДОБАВЛЕНИЯ СПОРТСМЕНА ---------- */
         .add-athlete {
             display: flex;
             gap: 10px;
@@ -382,12 +366,6 @@
             padding: 14px;
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            transition: border-color .2s ease;
-        }
-
-        .athlete-card.is-active {
-            border-color: rgba(74, 139, 240, .6);
-            box-shadow: 0 0 0 3px rgba(74, 139, 240, .12);
         }
 
         .athlete-card__head {
@@ -485,7 +463,6 @@
             transition: background-color .15s ease, border-color .15s ease,
                         transform .1s ease, opacity .2s ease;
             user-select: none;
-            -webkit-user-select: none;
         }
 
         .lap-btn__sub {
@@ -507,10 +484,7 @@
             background: rgba(34, 197, 94, .12);
             border-color: rgba(34, 197, 94, .5);
             color: #bbf7d0;
-            cursor: default;
         }
-
-        .lap-btn.is-done:active { transform: none; }
 
         /* ---------- КНОПКА БЫСТРОЙ ОТСЕЧКИ ---------- */
         .quick-split {
@@ -550,63 +524,121 @@
         }
 
         .split-row {
-            display: flex;
+            display: grid;
+            grid-template-columns: auto 1fr auto auto;
             align-items: center;
             gap: 10px;
             padding: 10px 12px;
             border-radius: 10px;
             background: rgba(0, 0, 0, .35);
             border: 1px solid rgba(255,255,255,.08);
-            animation: slideIn .25s ease;
+            cursor: pointer;
+            transition: background-color .15s ease, border-color .15s ease,
+                        transform .1s ease;
+            user-select: none;
         }
 
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(-4px); }
-            to   { opacity: 1; transform: translateY(0); }
+        .split-row:hover {
+            background: rgba(74, 139, 240, .1);
+            border-color: rgba(74, 139, 240, .4);
         }
+
+        .split-row:active { transform: scale(.99); }
 
         .split-row__lap {
             flex: 0 0 auto;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            min-width: 34px;
-            height: 34px;
-            border-radius: 9px;
+            min-width: 38px;
+            height: 38px;
+            border-radius: 10px;
             background: rgba(74, 139, 240, .18);
             color: var(--blue);
-            font-size: 14px;
+            font-size: 16px;
             font-weight: 800;
         }
 
+        .split-row__main {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            min-width: 0;
+        }
+
         .split-row__time {
-            font-size: 18px;
+            font-size: 20px;
             font-weight: 800;
             font-variant-numeric: tabular-nums;
             letter-spacing: -0.01em;
             color: #fff;
-            flex: 1 1 auto;
-            min-width: 0;
+            line-height: 1.1;
         }
 
-        .split-row__time small {
-            display: block;
+        .split-row__sub {
             font-size: 10px;
             font-weight: 600;
             letter-spacing: .08em;
             text-transform: uppercase;
             color: rgba(255,255,255,.45);
-            margin-top: 2px;
+        }
+
+        /* ---------- ОТСТАВАНИЕ ОТ ЛИДЕРА НА КРУГЕ ---------- */
+        .split-row__gap {
+            flex: 0 0 auto;
+            display: inline-flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 1px;
+            padding: 6px 10px;
+            border-radius: 9px;
+            font-variant-numeric: tabular-nums;
+            font-weight: 800;
+            font-size: 15px;
+            line-height: 1.1;
+            text-align: right;
+            min-width: 64px;
+            transition: background-color .2s ease, color .2s ease;
+        }
+
+        .split-row__gap small {
+            display: block;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,.5);
+        }
+
+        .split-row__gap.is-leading {
+            background: rgba(34, 197, 94, .16);
+            color: #86efac;
+            box-shadow: inset 0 0 0 1px rgba(34, 197, 94, .4);
+        }
+
+        .split-row__gap.is-leading small {
+            color: rgba(134, 239, 172, .7);
+        }
+
+        .split-row__gap.is-losing {
+            background: rgba(225, 74, 46, .14);
+            color: #ff8b73;
+            box-shadow: inset 0 0 0 1px rgba(225, 74, 46, .35);
+        }
+
+        .split-row__gap.is-losing small {
+            color: rgba(255, 139, 115, .65);
         }
 
         .split-row__actions {
             display: inline-flex;
             gap: 4px;
+            flex: 0 0 auto;
         }
 
         .split-row__actions .icon-btn {
-            width: 36px;
-            height: 36px;
+            width: 40px;
+            height: 40px;
             border-radius: 10px;
             font-size: 15px;
         }
@@ -629,7 +661,7 @@
         .modal__overlay {
             position: absolute;
             inset: 0;
-            background: rgba(0, 0, 0, .65);
+            background: rgba(0, 0, 0, .7);
             backdrop-filter: blur(6px);
             -webkit-backdrop-filter: blur(6px);
             animation: fadeIn .2s ease;
@@ -666,11 +698,7 @@
             .modal__content {
                 border-radius: 22px;
                 border-bottom: 1px solid rgba(255,255,255,.12);
-                padding: 22px 22px;
-            }
-            @keyframes slideUp {
-                from { transform: translateY(8px) scale(.98); opacity: 0; }
-                to   { transform: translateY(0)    scale(1);   opacity: 1; }
+                padding: 22px;
             }
         }
 
@@ -691,8 +719,8 @@
         .modal__title span { color: var(--blue); }
 
         .modal__close {
-            width: 36px;
-            height: 36px;
+            width: 40px;
+            height: 40px;
             border-radius: 10px;
             border: 1px solid rgba(255,255,255,.15);
             background: rgba(255,255,255,.05);
@@ -726,33 +754,32 @@
         .modal__hint {
             font-size: 12px;
             color: rgba(255,255,255,.55);
-            margin-top: 6px;
+            margin-top: 8px;
             line-height: 1.4;
         }
 
         .modal__hint b { color: #b6d4ff; }
 
-        /* ---------- ВЫБОР КРУГА В МОДАЛКЕ ---------- */
         .lap-picker {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(48px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(52px, 1fr));
             gap: 8px;
         }
 
         .lap-pick {
-            min-height: 48px;
-            border-radius: 10px;
+            min-height: 52px;
+            border-radius: 12px;
             border: 1.5px solid rgba(255,255,255,.2);
             background: rgba(0, 0, 0, .4);
             color: #fff;
             font-family: inherit;
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 800;
             cursor: pointer;
             transition: all .15s ease;
         }
 
-        .lap-pick:active { transform: scale(.96); }
+        .lap-pick:active { transform: scale(.95); }
 
         .lap-pick.is-selected {
             background: var(--blue-solid);
@@ -760,34 +787,49 @@
             box-shadow: 0 0 0 3px rgba(74, 139, 240, .25);
         }
 
-        /* ---------- ВВОД ВРЕМЕНИ ---------- */
         .time-input {
             display: flex;
-            align-items: center;
+            align-items: flex-end;
             justify-content: center;
-            gap: 6px;
-            padding: 14px 12px;
+            gap: 4px;
+            padding: 16px 12px 12px;
             border-radius: 14px;
             background: rgba(0, 0, 0, .5);
             border: 1.5px solid rgba(255,255,255,.15);
         }
 
+        .time-input__group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .time-input__group label {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,.45);
+        }
+
         .time-input input {
-            width: 68px;
-            height: 56px;
-            border-radius: 10px;
+            width: 70px;
+            height: 62px;
+            border-radius: 12px;
             border: 1.5px solid rgba(255,255,255,.18);
             background: rgba(255,255,255,.04);
             color: #fff;
             font-family: inherit;
-            font-size: 24px;
+            font-size: 26px;
             font-weight: 800;
             font-variant-numeric: tabular-nums;
             text-align: center;
             outline: none;
             -moz-appearance: textfield;
             appearance: textfield;
-            transition: border-color .15s ease;
+            padding: 0 4px;
+            transition: border-color .15s ease, background-color .15s ease;
         }
 
         .time-input input::-webkit-outer-spin-button,
@@ -798,45 +840,60 @@
 
         .time-input input:focus {
             border-color: var(--blue);
-            background: rgba(74, 139, 240, .08);
+            background: rgba(74, 139, 240, .1);
         }
 
         .time-input__sep {
-            font-size: 26px;
+            font-size: 28px;
             font-weight: 800;
             color: rgba(255,255,255,.5);
             user-select: none;
+            padding-bottom: 12px;
         }
 
-        .time-input__tenth {
-            width: 52px !important;
+        .time-input__sep--dot {
+            padding-bottom: 14px;
+        }
+
+        .time-input__tenth input {
+            width: 56px;
         }
 
         .time-actions {
-            display: flex;
-            gap: 8px;
-            margin-top: 10px;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 6px;
+            margin-top: 12px;
         }
 
-        .time-actions .btn {
-            flex: 1;
-            min-height: 40px;
+        .time-btn {
+            min-height: 44px;
+            padding: 6px 4px;
+            border-radius: 10px;
+            border: 1.5px solid rgba(255,255,255,.18);
+            background: rgba(255,255,255,.04);
+            color: #fff;
+            font-family: inherit;
             font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all .15s ease;
+            user-select: none;
         }
 
-        /* ---------- КНОПКИ МОДАЛКИ ---------- */
-        .modal__actions {
-            display: flex;
-            gap: 10px;
-            padding-top: 6px;
+        .time-btn:hover {
+            background: rgba(74, 139, 240, .15);
+            border-color: rgba(74, 139, 240, .5);
         }
 
-        .modal__actions .btn {
-            flex: 1;
-            min-height: 50px;
+        .time-btn:active { transform: scale(.94); }
+
+        .time-btn--now {
+            background: rgba(74, 139, 240, .15);
+            border-color: rgba(74, 139, 240, .5);
+            color: #b6d4ff;
         }
 
-        /* ---------- ПРЕДУПРЕЖДЕНИЕ ---------- */
         .modal__warn {
             display: flex;
             gap: 8px;
@@ -848,7 +905,20 @@
             font-size: 12px;
             line-height: 1.45;
             color: #ffc4b5;
-            margin-top: 8px;
+            margin-bottom: 12px;
+        }
+
+        .modal__warn[hidden] { display: none; }
+
+        .modal__actions {
+            display: flex;
+            gap: 10px;
+            padding-top: 4px;
+        }
+
+        .modal__actions .btn {
+            flex: 1;
+            min-height: 52px;
         }
 
         /* ============================================================
@@ -860,15 +930,43 @@
             .athlete-card { padding: 16px; }
         }
 
-        @media (min-width: 720px) {
-            .sticky-header__title { font-size: 16px; }
+        @media (max-width: 420px) {
+            .split-row {
+                grid-template-columns: auto 1fr auto;
+                gap: 8px;
+                padding: 10px;
+            }
+            .split-row__gap {
+                grid-column: 2 / 4;
+                grid-row: 2;
+                justify-self: start;
+                flex-direction: row;
+                align-items: center;
+                gap: 6px;
+                padding: 4px 10px;
+                min-width: 0;
+                margin-top: -6px;
+            }
+            .split-row__gap small {
+                display: inline;
+                margin-left: 2px;
+            }
+            .split-row__actions {
+                grid-column: 3;
+                grid-row: 1;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .time-input input { width: 60px; font-size: 22px; }
+            .time-input__tenth input { width: 48px; }
+            .time-btn { font-size: 12px; }
         }
     </style>
 </head>
 
 <body>
 
-<!-- ======================= ЛИПКАЯ ШАПКА ======================= -->
 <header class="sticky-header">
     <div class="container sticky-header__inner">
         <div class="sticky-header__title">
@@ -878,7 +976,6 @@
     </div>
 </header>
 
-<!-- ======================= ОСНОВНОЕ ======================= -->
 <main class="main">
     <div class="container">
 
@@ -915,7 +1012,7 @@
                     </div>
                 </div>
                 <div class="field__hint">
-                    Время круга — необязательно. Если указать — программа точнее определит круг.
+                    Время круга — необязательно. Если указать, программа точнее определит круг.
                 </div>
 
                 <button class="btn btn--primary btn--full" id="startBtn" type="button">
@@ -927,7 +1024,6 @@
         <!-- ============ ЭКРАН ТРЕКЕРА ============ -->
         <section id="trackerPanel" hidden>
 
-            <!-- Компактная инфо-панель -->
             <div class="panel">
                 <div class="race-bar">
                     <div class="race-item">
@@ -952,7 +1048,6 @@
                 </div>
             </div>
 
-            <!-- Добавление спортсмена -->
             <div class="panel">
                 <h2 class="panel__title">Добавить спортсмена</h2>
                 <div class="add-athlete">
@@ -965,7 +1060,6 @@
                 </div>
             </div>
 
-            <!-- Список спортсменов -->
             <div class="athletes-list" id="athletesList"></div>
 
         </section>
@@ -973,50 +1067,59 @@
     </div>
 </main>
 
-<!-- ======================= МОДАЛКА ОТСЕЧКИ ======================= -->
-<div class="modal" id="splitModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+<!-- ======================= МОДАЛКА ======================= -->
+<div class="modal" id="splitModal" role="dialog" aria-modal="true">
     <div class="modal__overlay" data-close></div>
     <div class="modal__content">
 
         <div class="modal__head">
-            <h3 class="modal__title" id="modalTitle">
-                Отсечка <span id="modalAthleteNumber">#—</span>
+            <h3 class="modal__title">
+                <span id="modalAction">Новая отсечка</span>
+                <span id="modalAthleteNumber">#—</span>
             </h3>
             <button class="modal__close" type="button" data-close aria-label="Закрыть">✕</button>
         </div>
 
-        <!-- Круг -->
         <div class="modal__section">
             <span class="modal__label">Круг</span>
             <div class="lap-picker" id="lapPicker"></div>
             <div class="modal__hint" id="lapHint"></div>
         </div>
 
-        <!-- Время -->
         <div class="modal__section">
             <span class="modal__label">Время от старта</span>
+
             <div class="time-input">
-                <input type="number" id="timeMin" min="0" max="99" value="0" inputmode="numeric">
+                <div class="time-input__group">
+                    <input type="number" id="timeMin" min="0" max="99" value="0"
+                           inputmode="numeric">
+                    <label for="timeMin">мин</label>
+                </div>
                 <span class="time-input__sep">:</span>
-                <input type="number" id="timeSec" min="0" max="59" value="0" inputmode="numeric">
-                <span class="time-input__sep">.</span>
-                <input type="number" id="timeTenth" min="0" max="9" value="0"
-                       class="time-input__tenth" inputmode="numeric">
+                <div class="time-input__group">
+                    <input type="number" id="timeSec" min="0" max="59" value="0"
+                           inputmode="numeric">
+                    <label for="timeSec">сек</label>
+                </div>
+                <span class="time-input__sep time-input__sep--dot">.</span>
+                <div class="time-input__group time-input__tenth">
+                    <input type="number" id="timeTenth" min="0" max="9" value="0"
+                           inputmode="numeric">
+                    <label for="timeTenth">доли</label>
+                </div>
             </div>
 
             <div class="time-actions">
-                <button class="btn btn--ghost" type="button" data-time-action="-1">− 1 сек</button>
-                <button class="btn btn--ghost" type="button" data-time-action="+1">+ 1 сек</button>
-                <button class="btn btn--ghost" type="button" data-time-action="now">
-                    Сейчас
-                </button>
+                <button class="time-btn" type="button" data-time="-1000">−1с</button>
+                <button class="time-btn" type="button" data-time="-100">−0.1</button>
+                <button class="time-btn time-btn--now" type="button" data-time="now">Сейчас</button>
+                <button class="time-btn" type="button" data-time="100">+0.1</button>
+                <button class="time-btn" type="button" data-time="1000">+1с</button>
             </div>
         </div>
 
-        <!-- Предупреждение -->
         <div class="modal__warn" id="modalWarn" hidden></div>
 
-        <!-- Кнопки -->
         <div class="modal__actions">
             <button class="btn btn--ghost" type="button" data-close>Отмена</button>
             <button class="btn btn--primary" type="button" id="saveSplitBtn">Сохранить</button>
@@ -1032,8 +1135,8 @@
 const STORAGE_KEY = 'biathlon_leaders_v2';
 
 const RACE_CONFIG = {
-    individual: { label: 'Индивидуальная (5 кругов)', laps: 5 },
-    sprint:     { label: 'Спринт (3 круга)',         laps: 3 },
+    individual: { label: 'Индивидуальная (5 кругов)', short: 'Индивидуальная', laps: 5 },
+    sprint:     { label: 'Спринт (3 круга)',         short: 'Спринт',         laps: 3 },
 };
 
 const DEFAULT_STATE = {
@@ -1043,8 +1146,8 @@ const DEFAULT_STATE = {
     firstStartTimeMs: null,
     raceType: 'individual',
     intervalSec: 30,
-    lapTimeSec: 0,       // 0 = не указано
-    athletes: [],        // { number, startTimeMs, splits: [{ lap, timeMs, wasAdjusted }] }
+    lapTimeSec: 0,
+    athletes: [],
 };
 
 let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
@@ -1073,7 +1176,19 @@ function formatDuration(ms) {
         : `${pad(m)}:${pad(s)}.${tenth}`;
 }
 
-/** "MM:SS.d" или просто секунды -> ms */
+/** Компактный формат для отставания: "+1.2" или "+1:23.4" */
+function formatGap(ms) {
+    if (ms == null || isNaN(ms) || ms < 0) return '';
+    if (ms === 0) return '';
+    if (ms < 60000) {
+        const totalSec = ms / 1000;
+        const s = Math.floor(totalSec);
+        const tenth = Math.floor((ms % 1000) / 100);
+        return `+${s}.${tenth}`;
+    }
+    return '+' + formatDuration(ms);
+}
+
 function parseDuration(str) {
     if (str == null) return 0;
     str = String(str).trim().replace(',', '.');
@@ -1088,22 +1203,6 @@ function parseDuration(str) {
     return Math.round(parseFloat(str) * 1000);
 }
 
-/** ms -> { min, sec, tenth } */
-function msToParts(ms) {
-    if (ms < 0) ms = 0;
-    const totalSec = Math.floor(ms / 1000);
-    const tenth = Math.floor((ms % 1000) / 100);
-    return {
-        min:   Math.floor(totalSec / 60),
-        sec:   totalSec % 60,
-        tenth: tenth,
-    };
-}
-
-function partsToMs(min, sec, tenth) {
-    return ((+min || 0) * 60 + (+sec || 0)) * 1000 + (+tenth || 0) * 100;
-}
-
 function parseStartTime(timeStr) {
     if (!timeStr) return null;
     const [h, m, s = 0] = timeStr.split(':').map(Number);
@@ -1111,13 +1210,6 @@ function parseStartTime(timeStr) {
     const d = new Date();
     d.setHours(h, m, Math.floor(s), 0);
     return d.getTime();
-}
-
-function plural(n, one, few, many) {
-    const m10 = n % 10, m100 = n % 100;
-    if (m10 === 1 && m100 !== 11) return one;
-    if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return few;
-    return many;
 }
 
 /* ============================================================
@@ -1136,11 +1228,12 @@ function loadState() {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (!raw) return;
         const parsed = JSON.parse(raw);
-        if (parsed.version !== 2) return;   // старую версию игнорируем
+        if (parsed.version !== 2) return;
         state = { ...DEFAULT_STATE, ...parsed };
         if (!Array.isArray(state.athletes)) state.athletes = [];
         state.athletes.forEach(a => {
             if (!Array.isArray(a.splits)) a.splits = [];
+            a.splits.sort((x, y) => x.lap - y.lap);
         });
     } catch (e) {
         console.warn('Не удалось загрузить:', e);
@@ -1148,21 +1241,14 @@ function loadState() {
 }
 
 /* ============================================================
-   ОПРЕДЕЛЕНИЕ КРУГА (эвристика)
-   ============================================================
-   Алгоритм определяет круг на основе:
-   1. Прошедшего времени от старта и примерного времени круга.
-   2. Уже записанных кругов спортсмена (нельзя записать круг N+1, если N+1 уже записан).
-   3. Защиты от «нулевого» круга.
-   4. При отсутствии времени круга — берётся следующий свободный круг.
-*/
+   ОПРЕДЕЛЕНИЕ КРУГА
+   ============================================================ */
 function detectLap(athlete, splitTimeMs, lapTimeSec, maxLaps) {
     const elapsedSec = (splitTimeMs - athlete.startTimeMs) / 1000;
     const usedLaps = new Set(athlete.splits.map(s => s.lap));
 
     let guess;
-    if (lapTimeSec > 0) {
-        // Ожидаем, что за время elapsedSec прошло примерно round(elapsedSec / lapTimeSec) кругов
+    if (lapTimeSec > 0 && elapsedSec > 0) {
         guess = Math.round(elapsedSec / lapTimeSec);
         guess = Math.max(1, Math.min(maxLaps, guess));
     } else {
@@ -1172,7 +1258,6 @@ function detectLap(athlete, splitTimeMs, lapTimeSec, maxLaps) {
         guess = Math.min(maxLaps, maxUsed + 1);
     }
 
-    // Если круг занят — пробуем следующий
     if (usedLaps.has(guess)) {
         for (let l = guess + 1; l <= maxLaps; l++) {
             if (!usedLaps.has(l)) { guess = l; break; }
@@ -1183,7 +1268,32 @@ function detectLap(athlete, splitTimeMs, lapTimeSec, maxLaps) {
 }
 
 /* ============================================================
-   ДЕЙСТВИЯ
+   ЛИДЕР НА КАЖДОМ КРУГЕ
+   ============================================================ */
+/**
+ * Возвращает объект { lapNumber: { timeMs, athleteNumber } },
+ * где timeMs — минимальное время от старта на этом круге
+ * среди всех отслеживаемых спортсменов.
+ */
+function computeLapLeaders() {
+    const leaders = {};
+    state.athletes.forEach(athlete => {
+        athlete.splits.forEach(split => {
+            const fromStart = split.timeMs - athlete.startTimeMs;
+            const cur = leaders[split.lap];
+            if (!cur || fromStart < cur.timeMs) {
+                leaders[split.lap] = {
+                    timeMs: fromStart,
+                    athleteNumber: athlete.number,
+                };
+            }
+        });
+    });
+    return leaders;
+}
+
+/* ============================================================
+   ДЕЙСТВИЯ С ГОНКОЙ
    ============================================================ */
 function startRace() {
     const timeStr = document.getElementById('firstStart').value;
@@ -1249,117 +1359,114 @@ function removeAthlete(number) {
 }
 
 /* ============================================================
-   МОДАЛКА ОТСЕЧКИ
+   МОДАЛКА
    ============================================================ */
 const modal = {
     el: null,
-    overlay: null,
+    isOpen: false,
+    mode: 'new',
     athlete: null,
+    splitIndex: -1,
+    maxLaps: 5,
     selectedLap: 1,
-    initialLap: 1,
-    initialTimeMs: 0,
-    isNew: true,           // новая отсечка или редактирование
-    editingLapIndex: -1,   // если редактируем существующую
+    autoLap: 1,
 
     init() {
         this.el = document.getElementById('splitModal');
-        this.overlay = this.el.querySelector('.modal__overlay');
 
-        // Закрытие
-        this.el.querySelectorAll('[data-close]').forEach(btn => {
-            btn.addEventListener('click', () => this.close());
+        this.el.querySelectorAll('[data-close]').forEach(el => {
+            el.addEventListener('click', () => this.close());
         });
+
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && this.el.classList.contains('is-open')) {
-                this.close();
+            if (!this.isOpen) return;
+            if (e.key === 'Escape') this.close();
+            if (e.key === 'Enter') {
+                const tag = (e.target && e.target.tagName) || '';
+                if (tag === 'INPUT') e.target.blur();
+                this.save();
             }
         });
 
-        // Кнопки выбора круга
         document.getElementById('lapPicker').addEventListener('click', (e) => {
             const btn = e.target.closest('.lap-pick');
             if (!btn) return;
             this.selectLap(parseInt(btn.dataset.lap, 10));
         });
 
-        // Кнопки времени
-        this.el.querySelectorAll('[data-time-action]').forEach(btn => {
+        this.el.querySelectorAll('[data-time]').forEach(btn => {
             btn.addEventListener('click', () => {
-                const action = btn.dataset.timeAction;
-                if (action === 'now') {
-                    this.setTime(Date.now());
+                const val = btn.dataset.time;
+                if (val === 'now') {
+                    const now = Date.now();
+                    this.setTimeFromMs(now - this.athlete.startTimeMs);
                 } else {
-                    const delta = parseInt(action, 10) * 1000;
-                    const cur = this.getTime();
-                    this.setTime(Math.max(0, cur + delta));
+                    const delta = parseInt(val, 10);
+                    const cur = this.getTimeFromInputs();
+                    this.setTimeFromMs(Math.max(0, cur + delta));
                 }
             });
         });
 
-        // Сохранение
-        document.getElementById('saveSplitBtn').addEventListener('click', () => {
-            this.save();
+        document.getElementById('saveSplitBtn').addEventListener('click', () => this.save());
+
+        ['timeMin', 'timeSec', 'timeTenth'].forEach(id => {
+            const input = document.getElementById(id);
+            input.addEventListener('focus', () => setTimeout(() => input.select(), 0));
+            input.addEventListener('input', () => this.checkConflicts());
+            input.addEventListener('blur', () => this.clampInputs());
         });
     },
 
-    openNew(athlete) {
+    clampInputs() {
+        const min = document.getElementById('timeMin');
+        const sec = document.getElementById('timeSec');
+        const tenth = document.getElementById('timeTenth');
+        min.value = Math.max(0, Math.min(99, parseInt(min.value, 10) || 0));
+        sec.value = Math.max(0, Math.min(59, parseInt(sec.value, 10) || 0));
+        tenth.value = Math.max(0, Math.min(9, parseInt(tenth.value, 10) || 0));
+    },
+
+    openNew(athlete, forcedLap) {
+        this.mode = 'new';
         this.athlete = athlete;
-        this.isNew = true;
-        this.editingLapIndex = -1;
+        this.splitIndex = -1;
+        this.maxLaps = RACE_CONFIG[state.raceType].laps;
 
         const now = Date.now();
-        const lapTimeSec = state.lapTimeSec;
-        const maxLaps = RACE_CONFIG[state.raceType].laps;
-        const lap = detectLap(athlete, now, lapTimeSec, maxLaps);
+        const autoLap = detectLap(athlete, now, state.lapTimeSec, this.maxLaps);
+        this.autoLap = autoLap;
+        this.selectedLap = forcedLap || autoLap;
 
-        this.selectedLap = lap;
-        this.initialLap = lap;
-        this.initialTimeMs = now - athlete.startTimeMs;
-        this.renderLaps(maxLaps);
-        this.setTime(now);
-
-        this.renderHint(lap, true);
-        this.showWarningIfBadTime();
+        this.renderLaps();
+        this.setTimeFromMs(now - athlete.startTimeMs);
+        this.updateHint();
+        this.updateTitle();
         this.show();
     },
 
-    openEdit(athlete, lapIndex) {
-        const split = athlete.splits[lapIndex];
+    openEdit(athlete, splitIndex) {
+        const split = athlete.splits[splitIndex];
         if (!split) return;
 
+        this.mode = 'edit';
         this.athlete = athlete;
-        this.isNew = false;
-        this.editingLapIndex = lapIndex;
-
+        this.splitIndex = splitIndex;
+        this.maxLaps = RACE_CONFIG[state.raceType].laps;
+        this.autoLap = split.lap;
         this.selectedLap = split.lap;
-        this.initialLap = split.lap;
-        this.initialTimeMs = split.timeMs - athlete.startTimeMs;
 
-        const maxLaps = RACE_CONFIG[state.raceType].laps;
-        this.renderLaps(maxLaps);
-        this.setTime(split.timeMs);
-
-        this.renderHint(split.lap, false);
-        this.hideWarning();
+        this.renderLaps();
+        this.setTimeFromMs(split.timeMs - athlete.startTimeMs);
+        this.updateHint();
+        this.updateTitle();
         this.show();
     },
 
-    show() {
-        document.getElementById('modalAthleteNumber').textContent = '#' + this.athlete.number;
-        this.el.classList.add('is-open');
-        document.body.style.overflow = 'hidden';
-    },
-
-    close() {
-        this.el.classList.remove('is-open');
-        document.body.style.overflow = '';
-        this.athlete = null;
-    },
-
-    renderLaps(maxLaps) {
+    renderLaps() {
         const picker = document.getElementById('lapPicker');
         let html = '';
-        for (let i = 1; i <= maxLaps; i++) {
+        for (let i = 1; i <= this.maxLaps; i++) {
             const cls = i === this.selectedLap ? 'lap-pick is-selected' : 'lap-pick';
             html += `<button type="button" class="${cls}" data-lap="${i}">${i}</button>`;
         }
@@ -1368,102 +1475,123 @@ const modal = {
 
     selectLap(lap) {
         this.selectedLap = lap;
-        document.querySelectorAll('.lap-pick').forEach(el => {
-            el.classList.toggle('is-selected', parseInt(el.dataset.lap, 10) === lap);
+        this.el.querySelectorAll('.lap-pick').forEach(el => {
+            el.classList.toggle('is-selected',
+                parseInt(el.dataset.lap, 10) === lap);
         });
-        this.renderHint(lap, false);
+        this.updateHint();
+        this.checkConflicts();
     },
 
-    renderHint(lap, isAuto) {
+    updateTitle() {
+        document.getElementById('modalAction').textContent =
+            this.mode === 'new' ? 'Новая отсечка' : 'Изменение отсечки';
+        document.getElementById('modalAthleteNumber').textContent =
+            '#' + this.athlete.number;
+    },
+
+    updateHint() {
         const hint = document.getElementById('lapHint');
-        const wasManual = lap !== this.initialLap;
-        const maxLaps = RACE_CONFIG[state.raceType].laps;
-
-        if (wasManual) {
-            hint.innerHTML = `Вы выбрали круг <b>${lap}</b> из ${maxLaps}.`;
-        } else if (isAuto) {
-            hint.innerHTML = state.lapTimeSec > 0
-                ? `Определено автоматически по времени круга: круг <b>${lap}</b> из ${maxLaps}.`
-                : `Определено автоматически (следующий свободный): круг <b>${lap}</b> из ${maxLaps}.`;
+        if (this.mode === 'new') {
+            if (this.selectedLap === this.autoLap) {
+                hint.innerHTML = state.lapTimeSec > 0
+                    ? `Автоопределение по времени круга: <b>круг ${this.autoLap}</b>.`
+                    : `Автоопределение: <b>круг ${this.autoLap}</b> (следующий свободный).`;
+            } else {
+                hint.innerHTML = `Вы выбрали <b>круг ${this.selectedLap}</b>.`;
+            }
         } else {
-            hint.innerHTML = `Круг <b>${lap}</b> из ${maxLaps}.`;
+            hint.innerHTML = `Редактирование отсечки на <b>круге ${this.selectedLap}</b>.`;
         }
     },
 
-    setTime(absTimeMs) {
-        if (this.athlete) {
-            const fromStart = Math.max(0, absTimeMs - this.athlete.startTimeMs);
-            const p = msToParts(fromStart);
-            document.getElementById('timeMin').value   = p.min;
-            document.getElementById('timeSec').value   = p.sec;
-            document.getElementById('timeTenth').value = p.tenth;
-        }
-        this.showWarningIfBadTime();
-    },
-
-    getTime() {
-        const min   = parseInt(document.getElementById('timeMin').value, 10)   || 0;
-        const sec   = parseInt(document.getElementById('timeSec').value, 10)   || 0;
-        const tenth = parseInt(document.getElementById('timeTenth').value, 10) || 0;
-        return partsToMs(min, sec, tenth);
-    },
-
-    getAbsTime() {
-        return this.athlete.startTimeMs + this.getTime();
-    },
-
-    showWarningIfBadTime() {
+    checkConflicts() {
         const warn = document.getElementById('modalWarn');
-        if (!this.athlete) { warn.hidden = true; return; }
+        const msgs = [];
 
-        const elapsed = this.getTime();
-        const messages = [];
-
-        if (elapsed < 0) {
-            messages.push('Время от старта отрицательное.');
-        }
+        const timeMs = this.getTimeFromInputs();
+        if (timeMs < 0) msgs.push('Отрицательное время.');
 
         const now = Date.now();
-        const abs = this.getAbsTime();
-        if (abs > now + 1000) {
-            messages.push('Время в будущем — это может быть ошибкой.');
+        if (this.athlete && timeMs > (now - this.athlete.startTimeMs) + 120000) {
+            msgs.push('Время сильно в будущем.');
         }
 
-        // Проверка на уже записанный круг
-        const others = this.athlete.splits.filter((_, i) =>
-            i !== (this.isNew ? -1 : this.editingLapIndex)
+        const conflict = this.athlete.splits.findIndex((s, i) =>
+            i !== this.splitIndex && s.lap === this.selectedLap
         );
-        if (others.some(s => s.lap === this.selectedLap)) {
-            messages.push(`Круг ${this.selectedLap} уже записан — он будет перезаписан.`);
+        if (conflict !== -1) {
+            msgs.push(`Круг ${this.selectedLap} уже записан — будет заменён.`);
         }
 
-        if (messages.length) {
-            warn.textContent = messages.join(' ');
+        if (msgs.length) {
+            warn.textContent = msgs.join(' ');
             warn.hidden = false;
         } else {
             warn.hidden = true;
         }
     },
 
+    setTimeFromMs(ms) {
+        if (ms < 0) ms = 0;
+        const totalSec = Math.floor(ms / 1000);
+        const tenth = Math.floor((ms % 1000) / 100);
+        document.getElementById('timeMin').value   = Math.floor(totalSec / 60);
+        document.getElementById('timeSec').value   = totalSec % 60;
+        document.getElementById('timeTenth').value = tenth;
+        this.checkConflicts();
+    },
+
+    getTimeFromInputs() {
+        const min   = parseInt(document.getElementById('timeMin').value, 10)   || 0;
+        const sec   = parseInt(document.getElementById('timeSec').value, 10)   || 0;
+        const tenth = parseInt(document.getElementById('timeTenth').value, 10) || 0;
+        return (min * 60 + sec) * 1000 + tenth * 100;
+    },
+
+    show() {
+        this.el.classList.add('is-open');
+        document.body.style.overflow = 'hidden';
+        this.isOpen = true;
+    },
+
+    close() {
+        this.el.classList.remove('is-open');
+        document.body.style.overflow = '';
+        this.isOpen = false;
+        this.athlete = null;
+        this.splitIndex = -1;
+    },
+
     save() {
         if (!this.athlete) return;
 
-        const lap = this.selectedLap;
-        const absTimeMs = this.getAbsTime();
-        const wasAdjusted = lap !== this.initialLap || this.getTime() !== this.initialTimeMs;
+        this.clampInputs();
 
-        if (this.isNew) {
-            // Удаляем предыдущую отсечку на том же круге (перезапись)
-            this.athlete.splits = this.athlete.splits.filter(s => s.lap !== lap);
-            this.athlete.splits.push({ lap, timeMs: absTimeMs, wasAdjusted });
-            this.athlete.splits.sort((a, b) => a.lap - b.lap);
+        const newLap = this.selectedLap;
+        const newTimeMs = this.athlete.startTimeMs + this.getTimeFromInputs();
+
+        if (this.mode === 'edit') {
+            const currentSplit = this.athlete.splits[this.splitIndex];
+            if (!currentSplit) { this.close(); return; }
+
+            this.athlete.splits = this.athlete.splits.filter(s =>
+                s === currentSplit || s.lap !== newLap
+            );
+
+            currentSplit.lap = newLap;
+            currentSplit.timeMs = newTimeMs;
+            currentSplit.wasAdjusted = true;
         } else {
-            this.athlete.splits[this.editingLapIndex] = {
-                lap, timeMs: absTimeMs, wasAdjusted
-            };
-            this.athlete.splits.sort((a, b) => a.lap - b.lap);
+            this.athlete.splits = this.athlete.splits.filter(s => s.lap !== newLap);
+            this.athlete.splits.push({
+                lap: newLap,
+                timeMs: newTimeMs,
+                wasAdjusted: newLap !== this.autoLap,
+            });
         }
 
+        this.athlete.splits.sort((a, b) => a.lap - b.lap);
         saveState();
         render();
         this.close();
@@ -1477,15 +1605,13 @@ function render() {
     const cfg = RACE_CONFIG[state.raceType] || RACE_CONFIG.individual;
     const maxLaps = cfg.laps;
 
-    // Показ панелей
     document.getElementById('setupPanel').hidden = state.started;
     document.getElementById('trackerPanel').hidden = !state.started;
 
     if (!state.started) return;
 
-    // Инфо
     document.getElementById('infoStart').textContent = state.firstStartTimeStr;
-    document.getElementById('infoType').textContent = cfg.label.split(' (')[0];
+    document.getElementById('infoType').textContent = cfg.short;
     document.getElementById('infoInterval').textContent = state.intervalSec + ' с';
     document.getElementById('infoLapTime').textContent = state.lapTimeSec > 0
         ? formatDuration(state.lapTimeSec * 1000)
@@ -1499,6 +1625,9 @@ function render() {
         </div>`;
         return;
     }
+
+    // Лидеры по каждому кругу
+    const lapLeaders = computeLapLeaders();
 
     list.innerHTML = state.athletes.map(athlete => {
 
@@ -1517,33 +1646,65 @@ function render() {
                     </button>`;
         }).join('');
 
-        // Строки отсечек
+        // Строки отсечек с отставанием от лидера на этом круге
         const splits = athlete.splits.map((s, idx) => {
             const fromStart = s.timeMs - athlete.startTimeMs;
-            return `<div class="split-row">
+
+            // Отставание от лидера на данном круге
+            const leader = lapLeaders[s.lap];
+            let gapClass, gapText, gapLabel;
+            if (!leader) {
+                gapClass = '';
+                gapText = '';
+                gapLabel = '';
+            } else {
+                const gap = fromStart - leader.timeMs;
+                const isSelf = athlete.number === leader.athleteNumber;
+
+                if (gap <= 0) {
+                    // Сам лидер на круге (или делим с ним первое место)
+                    gapClass = 'is-leading';
+                    gapText = 'лидер';
+                    gapLabel = 'на круге';
+                } else {
+                    gapClass = 'is-losing';
+                    gapText = formatGap(gap);
+                    gapLabel = `от #${leader.athleteNumber}`;
+                }
+            }
+
+            const gapBlock = gapText
+                ? `<span class="split-row__gap ${gapClass}">
+                        ${gapText}
+                        <small>${gapLabel}</small>
+                   </span>`
+                : `<span class="split-row__gap"></span>`;
+
+            const mark = s.wasAdjusted ? ' · ручн.' : '';
+
+            return `<div class="split-row"
+                         data-action="edit-split"
+                         data-number="${athlete.number}"
+                         data-index="${idx}"
+                         role="button"
+                         tabindex="0">
                 <span class="split-row__lap">${s.lap}</span>
-                <span class="split-row__time">
-                    ${formatDuration(fromStart)}
-                    <small>от старта</small>
+                <span class="split-row__main">
+                    <span class="split-row__time">${formatDuration(fromStart)}</span>
+                    <span class="split-row__sub">от старта${mark}</span>
                 </span>
+                ${gapBlock}
                 <span class="split-row__actions">
-                    <button class="icon-btn" type="button"
-                            data-action="edit-split"
-                            data-number="${athlete.number}"
-                            data-index="${idx}"
-                            title="Изменить">✎</button>
                     <button class="icon-btn icon-btn--danger" type="button"
                             data-action="remove-split"
                             data-number="${athlete.number}"
                             data-index="${idx}"
-                            title="Удалить">✕</button>
+                            aria-label="Удалить">✕</button>
                 </span>
             </div>`;
         }).join('');
 
-        const splitsBlock = splits
-            ? `<div class="splits-list">${splits}</div>`
-            : '';
+        const splitsBlock = splits ? `<div class="splits-list">${splits}</div>` : '';
 
         return `<div class="athlete-card" data-number="${athlete.number}">
             <div class="athlete-card__head">
@@ -1556,7 +1717,7 @@ function render() {
                     <button class="icon-btn icon-btn--danger" type="button"
                             data-action="remove-athlete"
                             data-number="${athlete.number}"
-                            title="Убрать">✕</button>
+                            aria-label="Убрать">✕</button>
                 </span>
             </div>
 
@@ -1594,27 +1755,19 @@ document.getElementById('athleteNumber').addEventListener('keydown', (e) => {
     }
 });
 
-// Делегирование событий по списку спортсменов
 document.getElementById('athletesList').addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-action]');
-    if (!btn) return;
+    const el = e.target.closest('[data-action]');
+    if (!el) return;
 
-    const action = btn.dataset.action;
-    const number = parseInt(btn.dataset.number, 10);
+    const action = el.dataset.action;
+    const number = parseInt(el.dataset.number, 10);
     const athlete = state.athletes.find(a => a.number === number);
     if (!athlete) return;
 
     if (action === 'remove-athlete') {
         removeAthlete(number);
 
-    } else if (action === 'lap') {
-        // Кнопка конкретного круга → открываем модалку сразу с выбранным кругом
-        const lap = parseInt(btn.dataset.lap, 10);
-        modal.openNew(athlete);
-        modal.selectLap(lap);
-
     } else if (action === 'quick-split') {
-        // Быстрая отсечка — сразу сохраняем с авто-кругом
         const now = Date.now();
         const maxLaps = RACE_CONFIG[state.raceType].laps;
         const lap = detectLap(athlete, now, state.lapTimeSec, maxLaps);
@@ -1624,12 +1777,17 @@ document.getElementById('athletesList').addEventListener('click', (e) => {
         saveState();
         render();
 
+    } else if (action === 'lap') {
+        const lap = parseInt(el.dataset.lap, 10);
+        modal.openNew(athlete, lap);
+
     } else if (action === 'edit-split') {
-        const idx = parseInt(btn.dataset.index, 10);
+        const idx = parseInt(el.dataset.index, 10);
+        if (isNaN(idx)) return;
         modal.openEdit(athlete, idx);
 
     } else if (action === 'remove-split') {
-        const idx = parseInt(btn.dataset.index, 10);
+        const idx = parseInt(el.dataset.index, 10);
         const split = athlete.splits[idx];
         if (!split) return;
         if (!confirm(`Удалить отсечку на круге ${split.lap} у #${number}?`)) return;
